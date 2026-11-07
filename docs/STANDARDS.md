@@ -84,7 +84,8 @@ Write tests first (red → green → refactor).
 
 ## 7. Workflow
 
-- Changes are planned with OpenSpec (`/opsx:propose` → `/opsx:apply` → `/opsx:archive`). Specs live in `openspec/specs/`.
+- Every change follows the change workflow in `CLAUDE.md`: OpenSpec propose → plan review → apply → code review → archive (specs synced into `openspec/specs/`) → `retrospective.md` → PR → squash merge on green CI. Both `/ponytail:ponytail-review` passes are mandatory.
+- Before the first change of a milestone, `/ponytail:ponytail-audit` runs on the whole repo.
 - Commits follow Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`).
 - Hosted on GitHub. PRs use `.github/pull_request_template.md`.
 - CI (GitHub Actions, `.github/workflows/build.yml`) MUST run `./gradlew build` (tests, ArchUnit, Spotless) on every PR and push to `main`.
@@ -106,3 +107,4 @@ Write tests first (red → green → refactor).
 | 2026-11-07 | `add-walking-skeleton`: pinned stack versions in §1; CI workflow now exists (§7) |
 | 2026-11-07 | `add-api-docs`: springdoc 3.2.0 pinned (§1); OpenAPI completeness rules (§4) |
 | 2026-11-07 | `add-api-docs-toggle`: new §8 Configuration & profiles (`prod` profile); change log renumbered to §9 |
+| 2026-11-07 | §7: change workflow moved into `CLAUDE.md` (mandatory plan and code reviews, retrospectives, merge on green); milestone audit |
