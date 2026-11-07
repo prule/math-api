@@ -21,9 +21,6 @@ public class ArchitectureTest {
     private static final String ADAPTER = "com.paulrule.mathapi.adapter..";
     private static final String CONFIG = "com.paulrule.mathapi.config..";
 
-    // shortcut: allowEmptyShould / withOptionalLayers let empty layers pass; remove both in backlog item 2 once every
-    // layer has a class.
-
     @ArchTest
     public static final ArchRule DOMAIN_IS_FRAMEWORK_FREE = classes()
             .that()
@@ -31,8 +28,7 @@ public class ArchitectureTest {
             .should()
             .onlyDependOnClassesThat()
             .resideInAnyPackage("java..", DOMAIN)
-            .because("the domain is plain Java (STANDARDS.md §2)")
-            .allowEmptyShould(true);
+            .because("the domain is plain Java (STANDARDS.md §2)");
 
     @ArchTest
     public static final ArchRule APPLICATION_IS_NOT_WEB_AWARE = noClasses()
@@ -41,8 +37,7 @@ public class ArchitectureTest {
             .should()
             .dependOnClassesThat()
             .resideInAnyPackage(ADAPTER, CONFIG, "org.springframework.web..", "org.springframework.http..")
-            .because("use cases must not know about adapters or HTTP (STANDARDS.md §2)")
-            .allowEmptyShould(true);
+            .because("use cases must not know about adapters or HTTP (STANDARDS.md §2)");
 
     @ArchTest
     public static final ArchRule CONFIGURATION_ONLY_IN_CONFIG = noClasses()
@@ -52,13 +47,11 @@ public class ArchitectureTest {
             .doNotBelongToAnyOf(MathApiApplication.class)
             .should()
             .beMetaAnnotatedWith(Configuration.class)
-            .because("Spring wiring lives in config (STANDARDS.md §2)")
-            .allowEmptyShould(true);
+            .because("Spring wiring lives in config (STANDARDS.md §2)");
 
     @ArchTest
     public static final ArchRule LAYERS_POINT_INWARDS = layeredArchitecture()
             .consideringOnlyDependenciesInLayers()
-            .withOptionalLayers(true)
             .layer("Domain")
             .definedBy(DOMAIN)
             .layer("Application")
@@ -74,6 +67,5 @@ public class ArchitectureTest {
             .whereLayer("Domain")
             .mayOnlyBeAccessedByLayers("Application", "Web", "Config")
             .whereLayer("Config")
-            .mayNotBeAccessedByAnyLayer()
-            .allowEmptyShould(true);
+            .mayNotBeAccessedByAnyLayer();
 }

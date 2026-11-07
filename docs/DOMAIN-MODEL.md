@@ -29,7 +29,9 @@ Operation.apply(a, b) → Result
 
 - Each `Operation` constant implements `apply(BigDecimal a, BigDecimal b)`.
 - Adding an operation = one new constant + its business rules here + tests. No other layer changes.
-- Domain failures are domain exceptions (e.g. `DivisionByZeroException`, `OperandOutOfRangeException`); the web adapter maps them to Problem Details.
+- `Operation.named(name)` is an exact, case-sensitive lookup; any other name raises `UnknownOperationException`.
+- `Calculation.result()` applies the Operation and normalises the Result (BR-4 trailing-zero stripping). Plain-notation rendering happens at the web adapter.
+- Domain failures are domain exceptions (`UnknownOperationException`; later `DivisionByZeroException`, `OperandOutOfRangeException`); the web adapter maps them to Problem Details.
 
 ## 3. Operations
 
@@ -54,3 +56,4 @@ Operation.apply(a, b) → Result
 | Date | Change |
 |------|--------|
 | 2026-11-07 | Initial model: four operations, BR-1 – BR-4 |
+| 2026-11-07 | `add-exact-arithmetic`: ADD, SUBTRACT, MULTIPLY implemented; `Operation.named`, `UnknownOperationException`, where BR-4 is applied |
