@@ -59,7 +59,7 @@ Errors use RFC 9457 Problem Details (`application/problem+json`):
 ### 3.3 Supporting endpoints
 
 - `GET /actuator/health` — liveness/readiness.
-- OpenAPI docs via springdoc: `/v3/api-docs`, `/swagger-ui.html`.
+- OpenAPI 3.1 docs via springdoc: `/v3/api-docs` (JSON), `/swagger-ui.html` (interactive). The allowed `operation` values are generated from the domain, so a new Operation appears without doc edits. Unauthenticated, like the API in v1.
 
 ### 3.4 Versioning
 
@@ -105,3 +105,4 @@ Path-based (`/api/v1`). Adding an operation is non-breaking and stays in v1. Any
 | 2026-11-07 | Initial PRD: v1 scope with four basic operations |
 | 2026-11-07 | `add-exact-arithmetic`: §3.2 clarifies case-sensitive operation names, operand echo format, Problem Details for all errors |
 | 2026-11-07 | `add-operand-limits`: §3.2 adds request limits and validation order |
+| 2026-11-07 | `add-api-docs`: §3.3 OpenAPI 3.1 docs delivered; v1 scope complete |
