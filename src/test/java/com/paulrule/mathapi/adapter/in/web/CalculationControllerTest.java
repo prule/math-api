@@ -67,6 +67,8 @@ class CalculationControllerTest {
         "SUBTRACT, 2, 5.5, -3.5",
         "MULTIPLY, 0.10, 10, 1",
         "MULTIPLY, 1000, 1000, 1000000",
+        "DIVIDE, 1, 3, 0.3333333333333333333333333333333333",
+        "DIVIDE, 1, 4, 0.25",
     })
     void eachOperationReturnsNormalisedPlainResult(String op, String a, String b, String expected) throws Exception {
         postJson("{\"operation\":\"%s\",\"a\":\"%s\",\"b\":\"%s\"}".formatted(op, a, b))
@@ -93,13 +95,31 @@ class CalculationControllerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"POWER", "add", "DIVIDE"})
+    @CsvSource({"NOT_AN_OPERATION", "add"})
     void rejectsUnknownOperation(String operation) throws Exception {
         expectProblem(
                         postJson("{\"operation\":\"%s\",\"a\":\"2\",\"b\":\"3\"}".formatted(operation)),
                         400,
                         "/problems/unknown-operation")
                 .andExpect(jsonPath("$.detail").value(containsString(operation)));
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+            delimiter = '|',
+            value = {
+                "\"1\" | \"0\"",
+                "\"1\" | \"0.00\"",
+                "\"1\" | \"-0\"",
+                "\"1\" | \"0E+5\"",
+                "\"1\" | 0.0",
+                "\"0\" | \"0\""
+            })
+    void rejectsDivisionByZero(String dividend, String divisor) throws Exception {
+        expectProblem(
+                postJson("{\"operation\":\"DIVIDE\",\"a\":%s,\"b\":%s}".formatted(dividend, divisor)),
+                422,
+                "/problems/division-by-zero");
     }
 
     @Test
