@@ -1,6 +1,8 @@
 package com.paulrule.mathapi.adapter.in.web;
 
+import com.paulrule.mathapi.domain.Calculation;
 import com.paulrule.mathapi.domain.DivisionByZeroException;
+import com.paulrule.mathapi.domain.OperandOutOfRangeException;
 import com.paulrule.mathapi.domain.Operation;
 import com.paulrule.mathapi.domain.UnknownOperationException;
 import java.net.URI;
@@ -28,6 +30,7 @@ public class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
     static final URI INVALID_REQUEST = URI.create("/problems/invalid-request");
     static final URI UNKNOWN_OPERATION = URI.create("/problems/unknown-operation");
     static final URI DIVISION_BY_ZERO = URI.create("/problems/division-by-zero");
+    static final URI OPERAND_OUT_OF_RANGE = URI.create("/problems/operand-out-of-range");
 
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotReadable(
@@ -65,6 +68,21 @@ public class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
         var problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, "Cannot divide by zero.");
         problem.setType(DIVISION_BY_ZERO);
         problem.setTitle("Division by zero");
+        return problem;
+    }
+
+    @ExceptionHandler(OperandOutOfRangeException.class)
+    ProblemDetail handleOperandOutOfRange(OperandOutOfRangeException ex) {
+        var rule = switch (ex.limit()) {
+            case DIGITS -> "must have at most " + Calculation.MAX_DIGITS + " significant digits";
+            case SCALE ->
+                "must have a scale between -" + Calculation.MAX_SCALE + " and " + Calculation.MAX_SCALE + " (at most "
+                        + Calculation.MAX_SCALE + " decimal places)";
+        };
+        var problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST, "Operand '" + ex.operand() + "' " + rule + ".");
+        problem.setType(OPERAND_OUT_OF_RANGE);
+        problem.setTitle("Operand out of range");
         return problem;
     }
 

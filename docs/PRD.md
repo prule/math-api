@@ -44,6 +44,8 @@ Request — operands may be JSON numbers or strings:
 - `operation` must be exactly a supported name (case-sensitive: `ADD`, not `add`).
 - `a` and `b` are echoed as received, in plain notation and with their given scale (`1e2` → `"100"`, `"1.50"` → `"1.50"`). Only `result` is normalised (BR-4).
 - Every error response (including framework errors such as 415) is Problem Details with `type`, `title`, `status` and a human-readable `detail` that exposes no internals.
+- Request limits: a body over 16,384 characters, or any JSON string or number over 1,000 characters, is rejected as `invalid-request` before parsing into numbers. Operand limits (BR-1) are reported as `operand-out-of-range`, naming the operand but never echoing its value.
+- Only the first failure is reported, checked in this order: invalid request → unknown operation → operand out of range (BR-1) → division by zero (BR-2).
 
 Errors use RFC 9457 Problem Details (`application/problem+json`):
 
@@ -102,3 +104,4 @@ Path-based (`/api/v1`). Adding an operation is non-breaking and stays in v1. Any
 |------|--------|
 | 2026-11-07 | Initial PRD: v1 scope with four basic operations |
 | 2026-11-07 | `add-exact-arithmetic`: §3.2 clarifies case-sensitive operation names, operand echo format, Problem Details for all errors |
+| 2026-11-07 | `add-operand-limits`: §3.2 adds request limits and validation order |

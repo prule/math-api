@@ -2,12 +2,14 @@ package com.paulrule.mathapi.adapter.in.web;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.paulrule.mathapi.config.UseCaseConfig;
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -120,6 +122,121 @@ class CalculationControllerTest {
                 postJson("{\"operation\":\"DIVIDE\",\"a\":%s,\"b\":%s}".formatted(dividend, divisor)),
                 422,
                 "/problems/division-by-zero");
+    }
+
+    // --- BR-1 operand limits (spec: Operand digits/scale limited, detail names operand, validation order) ---
+
+    private static final String DIGITS_100 = "1234567890".repeat(10);
+
+    private ResultActions calculate(String operation, String a, String b) throws Exception {
+        return postJson("{\"operation\":\"%s\",\"a\":%s,\"b\":%s}".formatted(operation, a, b));
+    }
+
+    private static String quoted(String s) {
+        return "\"" + s + "\"";
+    }
+
+    @Test
+    void acceptsExactly100Digits() throws Exception {
+        calculate("ADD", quoted(DIGITS_100), quoted("0"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result").value(DIGITS_100));
+    }
+
+    @Test
+    void rejects101Digits() throws Exception {
+        expectProblem(calculate("ADD", quoted(DIGITS_100 + "1"), quoted("0")), 400, "/problems/operand-out-of-range");
+    }
+
+    @Test
+    void trailingZerosWrittenOutCountAsDigits() throws Exception {
+        expectProblem(
+                calculate("ADD", quoted("1" + "0".repeat(100)), quoted("0")), 400, "/problems/operand-out-of-range");
+        calculate("ADD", quoted("1E+100"), quoted("0")).andExpect(status().isOk());
+    }
+
+    @Test
+    void acceptsScaleLimits() throws Exception {
+        calculate("ADD", quoted("1E+1000"), quoted("1E-1000")).andExpect(status().isOk());
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+            delimiter = '|',
+            value = {"\"1E+1001\" | \"1\"", "\"1\" | \"1E-1001\""})
+    void rejectsOnePastEachScaleLimit(String a, String b) throws Exception {
+        expectProblem(calculate("ADD", a, b), 400, "/problems/operand-out-of-range");
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+            delimiter = '|',
+            value = {"MULTIPLY | 1e999999999 | 1e999999999", "DIVIDE | \"1e-999999999\" | \"1e999999999\""})
+    void rejectsExtremeExponentsQuickly(String operation, String a, String b) {
+        assertTimeoutPreemptively(
+                Duration.ofSeconds(1),
+                () -> expectProblem(calculate(operation, a, b), 400, "/problems/operand-out-of-range"));
+    }
+
+    // Exponents at or past the int scale boundary are rejected by Jackson's parser, as number or string, before the
+    // domain sees them; the domain's own guard for scale == Integer.MIN_VALUE is pinned in CalculationTest.
+    @ParameterizedTest
+    @CsvSource(
+            delimiter = '|',
+            value = {"1E+2147483648", "\"1E+2147483648\"", "1e9999999999", "\"1e9999999999\""})
+    void rejectsHugeExponentsWhileParsing(String operand) throws Exception {
+        expectProblem(calculate("ADD", operand, quoted("1")), 400, "/problems/invalid-request");
+    }
+
+    @Test
+    void outOfRangeDetailNamesOperandAndLimitButNotValue() throws Exception {
+        expectProblem(calculate("ADD", quoted("1"), quoted("1E+1001")), 400, "/problems/operand-out-of-range")
+                .andExpect(jsonPath("$.detail").value(containsString("'b'")))
+                .andExpect(jsonPath("$.detail").value(containsString("scale")))
+                .andExpect(jsonPath("$.detail").value(not(containsString("1E+1001"))));
+    }
+
+    @Test
+    void unknownOperationWinsOverOperandLimits() throws Exception {
+        expectProblem(
+                calculate("NOT_AN_OPERATION", quoted("1E+1001"), quoted("1")), 400, "/problems/unknown-operation");
+    }
+
+    @Test
+    void operandLimitsWinOverDivisionByZero() throws Exception {
+        expectProblem(calculate("DIVIDE", quoted("1E+1001"), quoted("0")), 400, "/problems/operand-out-of-range");
+    }
+
+    // --- bounded request parsing (spec: Request parsing is bounded) ---
+
+    @Test
+    void rejectsOversizedBody() throws Exception {
+        var padding = "x".repeat(17_000);
+        expectProblem(
+                postJson("{\"operation\":\"ADD\",\"a\":\"1\",\"b\":\"2\",\"padding\":\"%s\"}".formatted(padding)),
+                400,
+                "/problems/invalid-request");
+    }
+
+    @Test
+    void rejectsOversizedStringOperand() throws Exception {
+        expectProblem(calculate("ADD", quoted("9".repeat(1001)), quoted("1")), 400, "/problems/invalid-request");
+    }
+
+    @Test
+    void rejectsOversizedNumberOperand() throws Exception {
+        expectProblem(calculate("ADD", "9".repeat(1001), quoted("1")), 400, "/problems/invalid-request");
+    }
+
+    @Test
+    void rejectsOversizedStringField() throws Exception {
+        // Without max-string-length this would be a 400 unknown-operation instead.
+        expectProblem(calculate("A".repeat(1001), quoted("1"), quoted("2")), 400, "/problems/invalid-request");
+    }
+
+    @Test
+    void largeButParseableOperandReachesTheDomainRule() throws Exception {
+        expectProblem(calculate("ADD", quoted("9".repeat(150)), quoted("1")), 400, "/problems/operand-out-of-range");
     }
 
     @Test
