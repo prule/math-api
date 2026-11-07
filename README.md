@@ -1,5 +1,7 @@
 # math-api
 
+> **This is a demonstration project, not a real product.** It was built as part of a presentation showing how [OpenSpec](https://openspec.dev), grill-me and ponytail review can take an idea to a working, tested API with Claude Code. The code, docs and specs are real and the build passes, but the service isn't deployed, maintained or meant for production use. The presentation is in [docs/slides/](docs/slides/).
+
 A stateless REST API for exact decimal arithmetic on two operands, built with Spring Boot 4 and Java 25.
 
 - Numbers are `BigDecimal` throughout: `0.1 + 0.2` is `0.3`, not `0.30000000000000004`.
