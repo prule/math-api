@@ -3,7 +3,12 @@ package com.paulrule.mathapi.adapter.in.web;
 import com.paulrule.mathapi.application.PerformCalculation;
 import com.paulrule.mathapi.domain.Calculation;
 import com.paulrule.mathapi.domain.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
+import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +24,40 @@ public class CalculationController {
         this.performCalculation = performCalculation;
     }
 
+    // Fully qualified: the swagger annotation clashes with the domain Operation enum.
+    @io.swagger.v3.oas.annotations.Operation(summary = "Perform a Calculation")
+    @ApiResponse(
+            responseCode = "200",
+            description = "The Calculation and its Result",
+            content =
+                    @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = CalculationResponse.class)))
+    @ApiResponse(
+            responseCode = "400",
+            description = "Invalid request, unknown operation, or operand out of range (BR-1)",
+            content =
+                    @Content(
+                            mediaType = "application/problem+json",
+                            schema = @Schema(implementation = ProblemDetail.class),
+                            examples = {
+                                @ExampleObject(name = "invalid-request", value = ProblemExamples.INVALID_REQUEST),
+                                @ExampleObject(name = "unknown-operation", value = ProblemExamples.UNKNOWN_OPERATION),
+                                @ExampleObject(
+                                        name = "operand-out-of-range",
+                                        value = ProblemExamples.OPERAND_OUT_OF_RANGE)
+                            }))
+    @ApiResponse(
+            responseCode = "422",
+            description = "Division by zero (BR-2)",
+            content =
+                    @Content(
+                            mediaType = "application/problem+json",
+                            schema = @Schema(implementation = ProblemDetail.class),
+                            examples =
+                                    @ExampleObject(
+                                            name = "division-by-zero",
+                                            value = ProblemExamples.DIVISION_BY_ZERO)))
     @PostMapping
     public CalculationResponse calculate(@Valid @RequestBody CalculationRequest request) {
         var calculation = new Calculation(Operation.named(request.operation()), request.a(), request.b());

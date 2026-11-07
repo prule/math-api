@@ -12,7 +12,7 @@
 | 2 | Exact operations: add, subtract, multiply | Done | `add-exact-arithmetic` |
 | 3 | Divide | Done | `add-divide` |
 | 4 | Operand limits | Done | `add-operand-limits` |
-| 5 | OpenAPI documentation | Todo | |
+| 5 | OpenAPI documentation | Done | `add-api-docs` |
 
 Items 1–5 complete PRD v1. Items under **Later** need a PRD update first (each one moves something out of the non-goals or roadmap).
 

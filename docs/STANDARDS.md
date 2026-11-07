@@ -12,7 +12,7 @@
 | Language | Java 25 (Gradle toolchain) |
 | Framework | Spring Boot 4.1.2 (webmvc, validation, actuator) |
 | Build | Gradle 9.8.2, Kotlin DSL, wrapper committed (`./gradlew`) |
-| API docs | springdoc-openapi (version compatible with Boot 4; added in backlog item 5) |
+| API docs | springdoc-openapi 3.2.0 (`springdoc-openapi-starter-webmvc-ui`), OpenAPI 3.1 |
 | Tests | JUnit (Boot-managed version), AssertJ, Spring Boot Test, ArchUnit 1.5.1 |
 | Formatting | Spotless 8.11.0 + palantir-java-format 2.103.0 (Java); ktlint (`*.gradle.kts`) |
 | Group / base package | `com.paulrule` / `com.paulrule.mathapi` |
@@ -57,7 +57,8 @@ config ──────────► all
 - Numeric values in responses are JSON strings (plain notation); requests accept numbers or strings.
 - Errors MUST be RFC 9457 Problem Details via Spring `ProblemDetail`, from a single `@RestControllerAdvice`. Each error has a stable `type` URI listed in the PRD.
 - Status codes: `400` invalid input; `422` valid input that violates a domain rule.
-- Every endpoint MUST appear correctly in the generated OpenAPI docs.
+- Every endpoint MUST appear correctly in the generated OpenAPI docs: an explicit `@ApiResponse` for each status it returns (including the 200's media type, which springdoc otherwise documents as `*/*`), and a `application/problem+json` example for each Problem Details `type`. `ApiDocumentationTest` enforces this; extend it with every new endpoint or error type.
+- Documented values that come from the domain (e.g. allowed `operation` names) MUST be generated from it (`config.OpenApiConfig`), never copied into annotations.
 
 ## 5. Code style
 
@@ -95,3 +96,4 @@ Write tests first (red → green → refactor).
 |------|--------|
 | 2026-11-07 | Initial standards |
 | 2026-11-07 | `add-walking-skeleton`: pinned stack versions in §1; CI workflow now exists (§7) |
+| 2026-11-07 | `add-api-docs`: springdoc 3.2.0 pinned (§1); OpenAPI completeness rules (§4) |

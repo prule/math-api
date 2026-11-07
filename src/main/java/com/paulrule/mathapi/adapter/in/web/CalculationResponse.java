@@ -1,4 +1,17 @@
 package com.paulrule.mathapi.adapter.in.web;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /** Response body; numbers are strings so clients never lose precision. */
-public record CalculationResponse(String operation, String a, String b, String result) {}
+@Schema(description = "The Calculation performed and its Result; every number is a string")
+public record CalculationResponse(
+        @Schema(example = "ADD") String operation,
+
+        @Schema(description = "Operand a as received, plain notation", example = "0.1")
+        String a,
+
+        @Schema(description = "Operand b as received, plain notation", example = "0.2")
+        String b,
+
+        @Schema(description = "Result, normalised (BR-4)", example = "0.3")
+        String result) {}

@@ -19,3 +19,11 @@ management:
   endpoint:
     health:
       show-details: never
+
+# OpenAPI docs (api-documentation spec). 3.1 is pinned so the number-or-string operand type stays valid.
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    version: openapi-3-1
+  swagger-ui:
+    path: /swagger-ui.html
