@@ -1,0 +1,11 @@
+# Production: don't expose the API contract or an interactive console publicly (api-documentation spec).
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+# Also stop Spring's default /webjars/** (and static) handlers, which still serve the stock swagger-ui webjar.
+spring:
+  web:
+    resources:
+      add-mappings: false

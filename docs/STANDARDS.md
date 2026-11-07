@@ -90,10 +90,19 @@ Write tests first (red → green → refactor).
 - CI (GitHub Actions, `.github/workflows/build.yml`) MUST run `./gradlew build` (tests, ArchUnit, Spotless) on every PR and push to `main`.
 - **Docs stay current:** a change that alters scope, API, operations, domain rules or these standards MUST update PRD.md, DOMAIN-MODEL.md or STANDARDS.md in the same PR, including the doc's change log.
 
-## 8. Change log
+## 8. Configuration & profiles
+
+- `src/main/resources/application.yaml` holds the **local-development defaults**: what `./gradlew bootRun` and the tests use with no profile.
+- Environment-specific overrides go in `application-<profile>.yaml`, activated with `SPRING_PROFILES_ACTIVE=<profile>`. Override only what differs, and comment why.
+- **`prod`** is the profile for any environment reachable beyond developers. Today it turns off API docs (`springdoc.api-docs.enabled`, `springdoc.swagger-ui.enabled`) and Spring's static-resource handlers (`spring.web.resources.add-mappings`, which would otherwise still serve the swagger-ui webjar). Deployments MUST set `SPRING_PROFILES_ACTIVE=prod`.
+- Every profile file MUST have a `@ActiveProfiles` test proving its behaviour (e.g. `ApiDocumentationDisabledTest`).
+- Single settings can be overridden per environment with Spring's standard environment variables (e.g. `SPRINGDOC_API_DOCS_ENABLED=true`). Don't add custom properties that duplicate a library's own switches.
+
+## 9. Change log
 
 | Date | Change |
 |------|--------|
 | 2026-11-07 | Initial standards |
 | 2026-11-07 | `add-walking-skeleton`: pinned stack versions in §1; CI workflow now exists (§7) |
 | 2026-11-07 | `add-api-docs`: springdoc 3.2.0 pinned (§1); OpenAPI completeness rules (§4) |
+| 2026-11-07 | `add-api-docs-toggle`: new §8 Configuration & profiles (`prod` profile); change log renumbered to §9 |
