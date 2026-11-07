@@ -1,6 +1,14 @@
 spring:
   application:
     name: math-api
+  # Bound parse work per request before the domain sees it (calculation spec: Request parsing is bounded).
+  jackson:
+    factory:
+      constraints:
+        read:
+          max-document-length: 16384
+          max-string-length: 1000
+          max-number-length: 1000
 
 # Explicit so a future actuator dependency can't silently widen exposure (service-health spec).
 management:

@@ -31,7 +31,7 @@ Operation.apply(a, b) → Result
 - Adding an operation = one new constant + its business rules here + tests. No other layer changes.
 - `Operation.named(name)` is an exact, case-sensitive lookup; any other name raises `UnknownOperationException`.
 - `Calculation.result()` applies the Operation and normalises the Result (BR-4 trailing-zero stripping). Plain-notation rendering happens at the web adapter.
-- Domain failures are domain exceptions (`UnknownOperationException`, `DivisionByZeroException`; later `OperandOutOfRangeException`); the web adapter maps them to Problem Details.
+- Domain failures are domain exceptions (`UnknownOperationException`, `DivisionByZeroException`, `OperandOutOfRangeException`); the web adapter maps them to Problem Details.
 
 ## 3. Operations
 
@@ -46,7 +46,7 @@ Operation.apply(a, b) → Result
 
 | ID | Rule |
 |----|------|
-| **BR-1** | An Operand has at most **100 significant digits** (`precision() ≤ 100`) and a magnitude exponent within **±1000** (`-1000 ≤ scale() ≤ 1000`, so `1e1000` is the largest power of ten accepted). Otherwise the Calculation is rejected (operand out of range). |
+| **BR-1** | An Operand, **as written**, has at most **100 significant digits** (`precision() ≤ 100`) and a scale within **±1000** (`-1000 ≤ scale() ≤ 1000`). Otherwise the Calculation is rejected (operand out of range), before any arithmetic. Examples: `1E+1000` and `1E-1000` are accepted; `1E+1001` and `1E-1001` are rejected; a 101-digit integer such as `1` followed by 100 zeros is rejected even though its value is small — write it as `1E+100`. Checking the written form (not the normalised value) is deliberate: it bounds both the arithmetic and the echoed operands. |
 | **BR-2** | Division by zero is rejected. Applies to any zero representation (`0`, `0.00`, `-0`). |
 | **BR-3** | `DIVIDE` uses `MathContext.DECIMAL128`: 34 significant digits, `RoundingMode.HALF_EVEN`. `ADD`, `SUBTRACT`, `MULTIPLY` are exact (no rounding). |
 | **BR-4** | Every Result is normalised with trailing zeros stripped and returned in plain (non-scientific) notation; zero is `0`. |
@@ -58,3 +58,4 @@ Operation.apply(a, b) → Result
 | 2026-11-07 | Initial model: four operations, BR-1 – BR-4 |
 | 2026-11-07 | `add-exact-arithmetic`: ADD, SUBTRACT, MULTIPLY implemented; `Operation.named`, `UnknownOperationException`, where BR-4 is applied |
 | 2026-11-07 | `add-divide`: DIVIDE implemented (BR-3 DECIMAL128 rounding, BR-2 via `DivisionByZeroException` → 422) |
+| 2026-11-07 | `add-operand-limits`: BR-1 enforced in `Calculation` via `OperandOutOfRangeException`; BR-1 note corrected (limit applies to the Operand as written) |
