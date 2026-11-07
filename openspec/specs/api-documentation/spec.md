@@ -46,15 +46,15 @@ The request schema SHALL list `operation`'s allowed values as exactly the names 
 
 #### Scenario: Allowed values match supported Operations
 - **WHEN** a client reads the request schema
-- **THEN** `operation`'s allowed values are exactly `ADD`, `SUBTRACT`, `MULTIPLY`, `DIVIDE`
+- **THEN** `operation`'s allowed values are exactly `ADD`, `SUBTRACT`, `MULTIPLY`, `DIVIDE`, `POWER`, `MODULO`
 
 ### Requirement: Error responses documented
-The calculation operation SHALL document a 400 response and a 422 response, each with content type `application/problem+json` and a Problem Details schema. The 400 response SHALL include one example per `type` (`/problems/invalid-request`, `/problems/unknown-operation`, `/problems/operand-out-of-range`), and the 422 response an example for `/problems/division-by-zero`.
+The calculation operation SHALL document a 400 response and a 422 response, each with content type `application/problem+json` and a Problem Details schema. The 400 response SHALL include one example per `type` (`/problems/invalid-request`, `/problems/unknown-operation`, `/problems/operand-out-of-range`), and the 422 response one example per `type` (`/problems/division-by-zero`, `/problems/invalid-exponent`, `/problems/result-out-of-range`).
 
 #### Scenario: Each error type has an example
 - **WHEN** a client reads the calculation operation's responses
 - **THEN** response `400` has `application/problem+json` examples whose `type` values are `/problems/invalid-request`, `/problems/unknown-operation` and `/problems/operand-out-of-range`
-- **AND** response `422` has an `application/problem+json` example whose `type` is `/problems/division-by-zero`
+- **AND** response `422` has `application/problem+json` examples whose `type` values are `/problems/division-by-zero`, `/problems/invalid-exponent` and `/problems/result-out-of-range`
 
 ### Requirement: API documentation can be disabled per environment
 API documentation SHALL be enabled by default and disabled when the service runs with the `prod` profile. While disabled, `GET /v3/api-docs`, `GET /swagger-ui.html`, any path under `/swagger-ui/` and the Swagger UI webjar under `/webjars/swagger-ui/` SHALL return HTTP 404, and all other endpoints SHALL behave exactly as when documentation is enabled.
@@ -71,3 +71,10 @@ API documentation SHALL be enabled by default and disabled when the service runs
 - **WHEN** the service starts with the `prod` profile active and a client requests `MULTIPLY` of `"1.5"` and `"1.5"`
 - **THEN** the response status is 200 and the `result` is `"2.25"`
 - **AND** `GET /actuator/health` returns 200 with `status` `UP`
+
+### Requirement: Unknown-operation example lists the supported operations
+The documented `/problems/unknown-operation` example SHALL list exactly the names of the supported Operations, in the same order the service reports them, so the example cannot drift from the real response when an Operation is added.
+
+#### Scenario: Example matches the supported set
+- **WHEN** a client reads the 400 response's `unknown-operation` example
+- **THEN** its `detail` lists exactly `ADD, SUBTRACT, MULTIPLY, DIVIDE, POWER, MODULO`

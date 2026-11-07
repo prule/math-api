@@ -49,15 +49,18 @@ public class CalculationController {
                             }))
     @ApiResponse(
             responseCode = "422",
-            description = "Division by zero (BR-2)",
+            description = "Division by zero (BR-2), invalid POWER exponent (BR-5), or POWER result out of range (BR-6)",
             content =
                     @Content(
                             mediaType = "application/problem+json",
                             schema = @Schema(implementation = ProblemDetail.class),
-                            examples =
-                                    @ExampleObject(
-                                            name = "division-by-zero",
-                                            value = ProblemExamples.DIVISION_BY_ZERO)))
+                            examples = {
+                                @ExampleObject(name = "division-by-zero", value = ProblemExamples.DIVISION_BY_ZERO),
+                                @ExampleObject(name = "invalid-exponent", value = ProblemExamples.INVALID_EXPONENT),
+                                @ExampleObject(
+                                        name = "result-out-of-range",
+                                        value = ProblemExamples.RESULT_OUT_OF_RANGE)
+                            }))
     @PostMapping
     public CalculationResponse calculate(@Valid @RequestBody CalculationRequest request) {
         var calculation = new Calculation(Operation.named(request.operation()), request.a(), request.b());

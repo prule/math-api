@@ -71,6 +71,21 @@ class CalculationControllerTest {
         "MULTIPLY, 1000, 1000, 1000000",
         "DIVIDE, 1, 3, 0.3333333333333333333333333333333333",
         "DIVIDE, 1, 4, 0.25",
+        "POWER, 2, 10, 1024",
+        "POWER, 2, -2, 0.25",
+        "POWER, 3, -1, 0.3333333333333333333333333333333333",
+        "POWER, -2, 3, -8",
+        "POWER, 1.1, 2, 1.21",
+        "POWER, 2, 200, 1606938044258990275541962092341163000000000000000000000000000",
+        "POWER, 0, 0, 1",
+        "POWER, 5, 0, 1",
+        "POWER, 2, 3.0, 8",
+        "MODULO, -7, 3, -1",
+        "MODULO, 7, -3, 1",
+        "MODULO, 5.5, 2, 1.5",
+        "MODULO, -7.5, 2, -1.5",
+        "MODULO, 6, 3, 0",
+        "MODULO, 1E+1000, 7, 4",
     })
     void eachOperationReturnsNormalisedPlainResult(String op, String a, String b, String expected) throws Exception {
         postJson("{\"operation\":\"%s\",\"a\":\"%s\",\"b\":\"%s\"}".formatted(op, a, b))
@@ -237,6 +252,66 @@ class CalculationControllerTest {
     @Test
     void largeButParseableOperandReachesTheDomainRule() throws Exception {
         expectProblem(calculate("ADD", quoted("9".repeat(150)), quoted("1")), 400, "/problems/operand-out-of-range");
+    }
+
+    // --- POWER and MODULO rules (spec: POWER exponent, POWER result bound, Division by zero, Validation order) ---
+
+    @ParameterizedTest(name = "2 ^ {0}")
+    @CsvSource({"0.5", "1000", "-1000"})
+    void rejectsInvalidExponent(String exponent) throws Exception {
+        expectProblem(calculate("POWER", quoted("2"), quoted(exponent)), 422, "/problems/invalid-exponent");
+    }
+
+    @ParameterizedTest(name = "{0} ^ 999")
+    @CsvSource({"10", "0.1"})
+    void acceptsExponentAtTheBound(String base) throws Exception {
+        calculate("POWER", quoted(base), quoted("999")).andExpect(status().isOk());
+    }
+
+    @ParameterizedTest(name = "{0} ^ 999")
+    @CsvSource({"100", "0.01"})
+    void rejectsResultOutOfRange(String base) throws Exception {
+        expectProblem(calculate("POWER", quoted(base), quoted("999")), 422, "/problems/result-out-of-range");
+    }
+
+    @ParameterizedTest(name = "MODULO 7 by {0}")
+    @CsvSource({"0", "0.00"})
+    void rejectsModuloByZero(String divisor) throws Exception {
+        expectProblem(calculate("MODULO", quoted("7"), quoted(divisor)), 422, "/problems/division-by-zero");
+    }
+
+    @Test
+    void rejectsZeroToANegativePower() throws Exception {
+        expectProblem(calculate("POWER", quoted("0"), quoted("-1")), 422, "/problems/division-by-zero");
+    }
+
+    @Test
+    void exponentRuleWinsOverZeroToANegativePower() throws Exception {
+        expectProblem(calculate("POWER", quoted("0"), quoted("-0.5")), 422, "/problems/invalid-exponent");
+    }
+
+    // E notation on purpose: written plainly this operand is 1,002 characters and the string limit would reject it.
+    private static final String WORST_OPERAND = "9." + "9".repeat(99) + "E-901"; // 100 digits, scale 1000
+
+    @ParameterizedTest(name = "worst ^ {0}")
+    @CsvSource({"999", "-999"})
+    void worstCasePowerIsRejectedQuickly(String exponent) {
+        assertTimeoutPreemptively(
+                Duration.ofSeconds(1),
+                () -> expectProblem(
+                        calculate("POWER", quoted(WORST_OPERAND), quoted(exponent)),
+                        422,
+                        "/problems/result-out-of-range"));
+    }
+
+    @Test
+    void heaviestInRangePowerIsFast() {
+        var nearOne = "1." + "0".repeat(98) + "1";
+        assertTimeoutPreemptively(
+                Duration.ofSeconds(1),
+                () -> calculate("POWER", quoted(nearOne), quoted("999"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.result").value("1")));
     }
 
     @Test

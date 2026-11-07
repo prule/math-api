@@ -22,6 +22,8 @@ Internal services and developers (portfolio / learning-grade). No public-interne
 | `SUBTRACT` | a − b   | |
 | `MULTIPLY` | a × b   | |
 | `DIVIDE`   | a ÷ b   | Rounded to 34 significant digits (BR-3); b = 0 rejected (BR-2) |
+| `POWER`    | a ^ b   | Integer b, \|b\| ≤ 999 (BR-5); exact power rounded to 34 digits (BR-3); result scale within ±1000 (BR-6); 0 ^ negative rejected (BR-2) |
+| `MODULO`   | a mod b | Truncated remainder, sign of a: −7 mod 3 = −1 (BR-7); exact; b = 0 rejected (BR-2) |
 
 All operations are binary. Semantics and rules live in [DOMAIN-MODEL.md](DOMAIN-MODEL.md).
 
@@ -45,7 +47,7 @@ Request — operands may be JSON numbers or strings:
 - `a` and `b` are echoed as received, in plain notation and with their given scale (`1e2` → `"100"`, `"1.50"` → `"1.50"`). Only `result` is normalised (BR-4).
 - Every error response (including framework errors such as 415) is Problem Details with `type`, `title`, `status` and a human-readable `detail` that exposes no internals.
 - Request limits: a body over 16,384 characters, or any JSON string or number over 1,000 characters, is rejected as `invalid-request` before parsing into numbers. Operand limits (BR-1) are reported as `operand-out-of-range`, naming the operand but never echoing its value.
-- Only the first failure is reported, checked in this order: invalid request → unknown operation → operand out of range (BR-1) → division by zero (BR-2).
+- Only the first failure is reported, checked in this order: invalid request → unknown operation → operand out of range (BR-1) → invalid exponent (BR-5) → division by zero (BR-2) → result out of range (BR-6).
 
 Errors use RFC 9457 Problem Details (`application/problem+json`):
 
@@ -55,6 +57,8 @@ Errors use RFC 9457 Problem Details (`application/problem+json`):
 | 400 | Unknown `operation` | `/problems/unknown-operation` |
 | 400 | Operand outside limits (BR-1) | `/problems/operand-out-of-range` |
 | 422 | Division by zero (BR-2) | `/problems/division-by-zero` |
+| 422 | `POWER` exponent not an integer or \|b\| > 999 (BR-5) | `/problems/invalid-exponent` |
+| 422 | `POWER` result scale outside ±1000 (BR-6) | `/problems/result-out-of-range` |
 
 ### 3.3 Supporting endpoints
 
@@ -85,7 +89,7 @@ Path-based (`/api/v1`). Adding an operation is non-breaking and stays in v1. Any
 
 | Item | Impact when it lands |
 |------|---------------------|
-| More binary operators (power, modulo, …) | New `Operation` constant + rules + tests; non-breaking |
+| ~~More binary operators (power, modulo, …)~~ | Delivered in `add-power-modulo` (POWER, MODULO); further operators follow the same pattern |
 | Unary operations (sqrt, negate, …) | Domain model must express arity; request shape may need `b` optional — decide in its OpenSpec change |
 | Client-chosen precision | New optional request field; non-breaking |
 | Calculation history | Adds a repository port + persistence adapter |
@@ -107,3 +111,4 @@ Path-based (`/api/v1`). Adding an operation is non-breaking and stays in v1. Any
 | 2026-11-07 | `add-operand-limits`: §3.2 adds request limits and validation order |
 | 2026-11-07 | `add-api-docs`: §3.3 OpenAPI 3.1 docs delivered; v1 scope complete |
 | 2026-11-07 | `add-api-docs-toggle`: §3.3 docs can be disabled per environment (`prod` profile) |
+| 2026-11-07 | `add-power-modulo`: §3.1 POWER and MODULO; §3.2 validation order and two 422 types; §6 roadmap row delivered |

@@ -14,8 +14,10 @@
 | 4 | Operand limits | Done | `add-operand-limits` |
 | 5 | OpenAPI documentation | Done | `add-api-docs` |
 | 5a | API docs toggle per environment (`prod` profile) | Done | `add-api-docs-toggle` |
+| 5b | Repo hygiene: README, unused test starters (v2 audit) | Todo | |
+| 6 | More binary operations (power, modulo) | Done | `add-power-modulo` |
 
-Items 1–5 complete PRD v1; 5a is a v1 follow-up. Items under **Later** need a PRD update first (each one moves something out of the non-goals or roadmap).
+Items 1–5 complete PRD v1; 5a is a v1 follow-up; 5b comes from the v2 milestone audit. Items under **Later** need a PRD update first (each one moves something out of the non-goals or roadmap).
 
 ---
 
@@ -71,6 +73,23 @@ Done when: Swagger UI shows the endpoint with all four operations and every erro
 
 ---
 
+## v2 milestone audit (2026-11-07)
+
+`/ponytail:ponytail-audit` before item 6. Verdict: healthy, no bugs or load risks.
+
+| Finding | Action |
+|---------|--------|
+| No README in a public repo | Item 5b |
+| Unknown-operation OpenAPI example lists operations by hand | Folded into item 6, with a test that the example's list equals `Operation.values()` |
+| `spring-boot-starter-actuator-test` and `-validation-test` unused (all 114 tests pass without them) | Item 5b |
+| `PerformCalculation` only passes the call through | Skipped: STANDARDS §2 requires the application layer, and item 10 (history) gives it work |
+
+### 5b. Repo hygiene
+
+```text
+/opsx:propose Repo hygiene from the v2 audit: add a README.md (what math-api is, ./gradlew bootRun, one curl example, links to docs/ and /swagger-ui.html, a pointer to the CLAUDE.md change workflow) and remove the unused spring-boot-starter-actuator-test and spring-boot-starter-validation-test test dependencies. No behaviour change; set skip_specs. Done when ./gradlew clean build passes with all tests.
+```
+
 ## Later (post-v1 — update PRD.md first)
 
 Each prompt below starts by moving the item from PRD §5/§6 into scope. Order is a suggestion; reorder as needs arrive.
@@ -78,7 +97,7 @@ Each prompt below starts by moving the item from PRD §5/§6 into scope. Order i
 ### 6. More binary operations (power, modulo)
 
 ```text
-/opsx:propose Add POWER and MODULO operations. First update docs/PRD.md (§3.1, roadmap, change log) and add their business rules to docs/DOMAIN-MODEL.md with new BR ids: POWER exponent must be an integer within a bounded range (prevent CPU exhaustion), negative/fractional exponent behaviour, MODULO by zero, sign of MODULO result for negative operands. Then implement as new Operation constants, test-first. The calculation spec's "Unknown Operation rejected" scenario "Unsupported name" uses POWER — MODIFY it to a name that will never be an Operation.
+/opsx:propose Add POWER and MODULO operations. First update docs/PRD.md (§3.1, roadmap, change log) and add their business rules to docs/DOMAIN-MODEL.md with new BR ids: POWER exponent must be an integer within a bounded range (prevent CPU exhaustion), negative/fractional exponent behaviour, MODULO by zero, sign of MODULO result for negative operands. Then implement as new Operation constants, test-first. The calculation spec's "Unknown Operation rejected" scenario "Unsupported name" uses POWER — MODIFY it to a name that will never be an Operation. Update the unknown-operation example in ProblemExamples and add an ApiDocumentationTest assertion that its listed operations equal Operation.values() (v2 audit).
 ```
 
 ### 7. Unary operations (sqrt, negate)

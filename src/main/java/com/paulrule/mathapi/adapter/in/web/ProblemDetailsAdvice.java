@@ -2,8 +2,10 @@ package com.paulrule.mathapi.adapter.in.web;
 
 import com.paulrule.mathapi.domain.Calculation;
 import com.paulrule.mathapi.domain.DivisionByZeroException;
+import com.paulrule.mathapi.domain.InvalidExponentException;
 import com.paulrule.mathapi.domain.OperandOutOfRangeException;
 import com.paulrule.mathapi.domain.Operation;
+import com.paulrule.mathapi.domain.ResultOutOfRangeException;
 import com.paulrule.mathapi.domain.UnknownOperationException;
 import java.net.URI;
 import java.util.Arrays;
@@ -31,6 +33,8 @@ public class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
     static final URI UNKNOWN_OPERATION = URI.create("/problems/unknown-operation");
     static final URI DIVISION_BY_ZERO = URI.create("/problems/division-by-zero");
     static final URI OPERAND_OUT_OF_RANGE = URI.create("/problems/operand-out-of-range");
+    static final URI INVALID_EXPONENT = URI.create("/problems/invalid-exponent");
+    static final URI RESULT_OUT_OF_RANGE = URI.create("/problems/result-out-of-range");
 
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotReadable(
@@ -65,10 +69,19 @@ public class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(DivisionByZeroException.class)
     ProblemDetail handleDivisionByZero(DivisionByZeroException ex) {
-        var problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, "Cannot divide by zero.");
-        problem.setType(DIVISION_BY_ZERO);
-        problem.setTitle("Division by zero");
-        return problem;
+        return unprocessable(DIVISION_BY_ZERO, "Division by zero", "Cannot divide by zero.");
+    }
+
+    @ExceptionHandler(InvalidExponentException.class)
+    ProblemDetail handleInvalidExponent(InvalidExponentException ex) {
+        return unprocessable(
+                INVALID_EXPONENT, "Invalid exponent", "POWER needs an integer exponent between -999 and 999.");
+    }
+
+    @ExceptionHandler(ResultOutOfRangeException.class)
+    ProblemDetail handleResultOutOfRange(ResultOutOfRangeException ex) {
+        return unprocessable(
+                RESULT_OUT_OF_RANGE, "Result out of range", "The result's scale must be between -1000 and 1000.");
     }
 
     @ExceptionHandler(OperandOutOfRangeException.class)
@@ -83,6 +96,13 @@ public class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
                 HttpStatus.BAD_REQUEST, "Operand '" + ex.operand() + "' " + rule + ".");
         problem.setType(OPERAND_OUT_OF_RANGE);
         problem.setTitle("Operand out of range");
+        return problem;
+    }
+
+    private static ProblemDetail unprocessable(URI type, String title, String detail) {
+        var problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, detail);
+        problem.setType(type);
+        problem.setTitle(title);
         return problem;
     }
 
