@@ -21,7 +21,7 @@ Every change (usually one `docs/BACKLOG.md` item) goes through these steps in or
 3. **Apply**: create branch `feat/<change>` from an up-to-date `main`, set the item to In progress in `docs/BACKLOG.md`, then `/opsx:apply`. Done when every task is checked and `./gradlew clean build` passes (tests, ArchUnit, Spotless). Fix formatting with `./gradlew spotlessApply`; never weaken an ArchUnit rule or a test to get green.
 4. **Review the code**: run both reviews on the uncommitted diff, then apply every point from either, each with a test that fails without it, and rerun `./gradlew build`.
    - `/ponytail:ponytail-review` on the diff and the code it touches: is it correct, safe, tested and minimal?
-   - `/code-review` against `main`: does it follow `docs/STANDARDS.md` and these rules, and does it meet every scenario in the change's spec delta?
+   - `/code-review` on the change since `main` (`main` is the starting point it diffs from, not what it reviews), with `openspec/changes/<change>/` as the spec: does it follow `docs/STANDARDS.md` and these rules, and meet every scenario in the spec delta?
 5. **Archive**: `/opsx:archive`. It syncs the delta specs into `openspec/specs/` (check with `openspec validate <capability> --type spec --strict`) and moves the change into `openspec/changes/archive/`. Set the item to Done in `docs/BACKLOG.md`.
 6. **Retrospective**: run `/ponytail:ponytail-debt`, then write `retrospective.md` in the archived change's folder with four sections:
    - **Caught by review**: each finding from both reviews and how it was fixed.
