@@ -139,7 +139,9 @@ class ApiDocumentationTest {
         assertThat(exampleTypes(docs, "400"))
                 .containsExactlyInAnyOrder(
                         "/problems/invalid-request", "/problems/unknown-operation", "/problems/operand-out-of-range");
-        assertThat(exampleTypes(docs, "422")).containsExactly("/problems/division-by-zero");
+        assertThat(exampleTypes(docs, "422"))
+                .containsExactlyInAnyOrder(
+                        "/problems/division-by-zero", "/problems/invalid-exponent", "/problems/result-out-of-range");
     }
 
     @Test
@@ -148,6 +150,22 @@ class ApiDocumentationTest {
 
         // Spring's ProblemDetail has a 'properties' map for extensions; it is never a key in the JSON response.
         assertThat(properties).containsOnlyKeys("type", "title", "status", "detail", "instance");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void unknownOperationExampleListsTheSupportedOperations() throws Exception {
+        Map<String, Object> example = apiDocs()
+                .read(POST
+                        + ".responses['400'].content['application/problem+json'].examples['unknown-operation'].value");
+        var detail = (String) example.get("detail");
+        var listed = detail.substring(
+                detail.indexOf("(case-sensitive): ") + "(case-sensitive): ".length(), detail.length() - 1);
+
+        // Annotation values must be constants, so this test is what keeps the example in step with the enum.
+        assertThat(listed)
+                .isEqualTo(String.join(
+                        ", ", Arrays.stream(Operation.values()).map(Enum::name).toList()));
     }
 
     @SuppressWarnings("unchecked")
