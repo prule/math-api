@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: math-api
+
+# Explicit so a future actuator dependency can't silently widen exposure (service-health spec).
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
