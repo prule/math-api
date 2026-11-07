@@ -26,8 +26,14 @@ class OperationTest {
         "MULTIPLY, -2, 3, -6",
         "MULTIPLY, 1.5, 1.5, 2.25",
         "MULTIPLY, 0.001, 0.001, 0.000001",
+        // DIVIDE (BR-3: 34 significant digits, HALF_EVEN)
+        "DIVIDE, 1, 4, 0.25",
+        "DIVIDE, 1, 3, 0.3333333333333333333333333333333333",
+        "DIVIDE, 2, 3, 0.6666666666666666666666666666666667",
+        "DIVIDE, 1, -4, -0.25",
+        "DIVIDE, 0, 5, 0",
     })
-    void appliesExactly(Operation operation, String a, String b, String expected) {
+    void applies(Operation operation, String a, String b, String expected) {
         assertThat(operation.apply(new BigDecimal(a), new BigDecimal(b))).isEqualByComparingTo(expected);
     }
 
@@ -37,6 +43,25 @@ class OperationTest {
                 Operation.ADD.apply(new BigDecimal("12345678901234567890.123456789"), new BigDecimal("0.000000001"));
 
         assertThat(result.toPlainString()).isEqualTo("12345678901234567890.123456790");
+    }
+
+    @ParameterizedTest(name = "{0} / 1 = {1}")
+    @CsvSource({
+        // 35 significant digits, tie on the 35th: HALF_EVEN rounds to the even neighbour (HALF_UP would not)
+        "1.0000000000000000000000000000000005, 1",
+        "1.0000000000000000000000000000000015, 1.000000000000000000000000000000002",
+    })
+    void divideRoundsTiesToEven(String a, String expected) {
+        var result = Operation.DIVIDE.apply(new BigDecimal(a), BigDecimal.ONE);
+
+        assertThat(result.stripTrailingZeros().toPlainString()).isEqualTo(expected);
+    }
+
+    @ParameterizedTest(name = "{0} / {1}")
+    @CsvSource({"1, 0", "1, 0.00", "1, -0", "1, 0E+5", "0, 0"})
+    void divideByAnyZeroIsRejected_BR2(String a, String b) {
+        assertThatThrownBy(() -> Operation.DIVIDE.apply(new BigDecimal(a), new BigDecimal(b)))
+                .isInstanceOf(DivisionByZeroException.class);
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.paulrule.mathapi.adapter.in.web;
 
+import com.paulrule.mathapi.domain.DivisionByZeroException;
 import com.paulrule.mathapi.domain.Operation;
 import com.paulrule.mathapi.domain.UnknownOperationException;
 import java.net.URI;
@@ -26,6 +27,7 @@ public class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
 
     static final URI INVALID_REQUEST = URI.create("/problems/invalid-request");
     static final URI UNKNOWN_OPERATION = URI.create("/problems/unknown-operation");
+    static final URI DIVISION_BY_ZERO = URI.create("/problems/division-by-zero");
 
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotReadable(
@@ -55,6 +57,14 @@ public class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
                 "Unknown operation '" + ex.getName() + "'. Supported operations (case-sensitive): " + supported + ".");
         problem.setType(UNKNOWN_OPERATION);
         problem.setTitle("Unknown operation");
+        return problem;
+    }
+
+    @ExceptionHandler(DivisionByZeroException.class)
+    ProblemDetail handleDivisionByZero(DivisionByZeroException ex) {
+        var problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, "Cannot divide by zero.");
+        problem.setType(DIVISION_BY_ZERO);
+        problem.setTitle("Division by zero");
         return problem;
     }
 
