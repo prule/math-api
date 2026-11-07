@@ -41,6 +41,10 @@ Request — operands may be JSON numbers or strings:
 { "operation": "DIVIDE", "a": "1", "b": "3", "result": "0.3333333333333333333333333333333333" }
 ```
 
+- `operation` must be exactly a supported name (case-sensitive: `ADD`, not `add`).
+- `a` and `b` are echoed as received, in plain notation and with their given scale (`1e2` → `"100"`, `"1.50"` → `"1.50"`). Only `result` is normalised (BR-4).
+- Every error response (including framework errors such as 415) is Problem Details with `type`, `title`, `status` and a human-readable `detail` that exposes no internals.
+
 Errors use RFC 9457 Problem Details (`application/problem+json`):
 
 | Status | When | `type` |
@@ -97,3 +101,4 @@ Path-based (`/api/v1`). Adding an operation is non-breaking and stays in v1. Any
 | Date | Change |
 |------|--------|
 | 2026-11-07 | Initial PRD: v1 scope with four basic operations |
+| 2026-11-07 | `add-exact-arithmetic`: §3.2 clarifies case-sensitive operation names, operand echo format, Problem Details for all errors |

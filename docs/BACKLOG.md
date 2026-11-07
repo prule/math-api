@@ -9,7 +9,7 @@
 | # | Item | Status | OpenSpec change |
 |---|------|--------|-----------------|
 | 1 | Walking skeleton | Done | `add-walking-skeleton` |
-| 2 | Exact operations: add, subtract, multiply | Todo | |
+| 2 | Exact operations: add, subtract, multiply | Done | `add-exact-arithmetic` |
 | 3 | Divide | Todo | |
 | 4 | Operand limits | Todo | |
 | 5 | OpenAPI documentation | Todo | |
