@@ -77,7 +77,7 @@ Each prompt below starts by moving the item from PRD §5/§6 into scope. Order i
 ### 6. More binary operations (power, modulo)
 
 ```text
-/opsx:propose Add POWER and MODULO operations. First update docs/PRD.md (§3.1, roadmap, change log) and add their business rules to docs/DOMAIN-MODEL.md with new BR ids: POWER exponent must be an integer within a bounded range (prevent CPU exhaustion), negative/fractional exponent behaviour, MODULO by zero, sign of MODULO result for negative operands. Then implement as new Operation constants, test-first.
+/opsx:propose Add POWER and MODULO operations. First update docs/PRD.md (§3.1, roadmap, change log) and add their business rules to docs/DOMAIN-MODEL.md with new BR ids: POWER exponent must be an integer within a bounded range (prevent CPU exhaustion), negative/fractional exponent behaviour, MODULO by zero, sign of MODULO result for negative operands. Then implement as new Operation constants, test-first. The calculation spec's "Unknown Operation rejected" scenario "Unsupported name" uses POWER — MODIFY it to a name that will never be an Operation.
 ```
 
 ### 7. Unary operations (sqrt, negate)
