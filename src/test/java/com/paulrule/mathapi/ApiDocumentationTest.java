@@ -179,6 +179,27 @@ class ApiDocumentationTest {
                         ", ", Arrays.stream(Operation.values()).map(Enum::name).toList()));
     }
 
+    // --- operations endpoint (spec: Operations endpoint documented) ---
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void operationsEndpointIsDocumentedAsAJsonArrayOfNameAndArity() throws Exception {
+        var docs = apiDocs();
+        var get = "$.paths['/api/v1/operations'].get";
+        Map<String, Object> responses = docs.read(get + ".responses");
+        Map<String, Object> content = docs.read(get + ".responses['200'].content");
+
+        assertThat(responses).containsOnlyKeys("200");
+        assertThat(content).containsOnlyKeys("application/json");
+        Map<String, Object> array = docs.read(get + ".responses['200'].content['application/json'].schema");
+        assertThat(allowedTypes(array)).containsExactly("array");
+        var item = resolve(docs, (Map<String, Object>) array.get("items"));
+        var properties = (Map<String, Map<String, Object>>) item.get("properties");
+        assertThat(properties).containsOnlyKeys("name", "arity");
+        assertThat(allowedTypes(properties.get("name"))).containsExactly("string");
+        assertThat(allowedTypes(properties.get("arity"))).containsExactly("integer");
+    }
+
     @SuppressWarnings("unchecked")
     private static List<String> exampleTypes(DocumentContext docs, String status) {
         Map<String, Map<String, Object>> examples =

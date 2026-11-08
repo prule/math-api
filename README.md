@@ -9,7 +9,7 @@ A stateless REST API for exact decimal arithmetic on one or two operands, built 
 - Every error is [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457) with a stable `type`.
 - Operand and request sizes are bounded, so no request can run away with CPU or memory.
 
-For the supported operations and their rules, see [PRD §3.1](docs/PRD.md#31-operations) or the running API's Swagger UI.
+For the supported operations and their rules, see [PRD §3.1](docs/PRD.md#31-operations) or the running API's Swagger UI. `GET /api/v1/operations` lists them, with how many operands each takes.
 
 ## Run it
 
