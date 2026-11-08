@@ -62,6 +62,15 @@ A unary Operation takes no `b`, and its response has no `b` key:
 - Request limits: a body over 16,384 characters, or any JSON string or number over 1,000 characters, is rejected as `invalid-request` before parsing into numbers. Operand limits (BR-1) are reported as `operand-out-of-range`, naming the operand but never echoing its value.
 - Only the first failure is reported, checked in this order: invalid request → unknown operation → operand count (BR-9, reported as invalid request) → operand out of range (BR-1) → invalid exponent (BR-5) → division by zero (BR-2) → negative square root (BR-8) → result out of range (BR-6).
 
+`GET /api/v1/operations` lists the supported Operations, derived from the domain so it always matches what `POST /api/v1/calculations` accepts:
+
+```json
+[ { "name": "ADD", "arity": 2 }, { "name": "SUBTRACT", "arity": 2 }, …, { "name": "SQRT", "arity": 1 }, { "name": "NEGATE", "arity": 1 } ]
+```
+
+- One entry per Operation, in the same order as the `unknown-operation` detail. `name` is the exact value to send as `operation`; `arity` is a JSON integer, 1 or 2 (BR-9).
+- It takes no input and returns only `200`. Methods other than `GET` and `HEAD` get `405` Problem Details.
+
 Errors use RFC 9457 Problem Details (`application/problem+json`):
 
 | Status | When | `type` |
@@ -96,7 +105,6 @@ Path-based (`/api/v1`). Adding an operation is non-breaking and stays in v1. Any
 - Persistence / calculation history.
 - Expression parsing (`"2 + 3 * 4"`) or n-ary operations (`sum[1,2,3]`).
 - Client-chosen precision or rounding mode.
-- An operations-discovery endpoint (`GET /operations`).
 - HATEOAS links.
 
 ## 6. Roadmap / known future changes
@@ -108,7 +116,7 @@ Path-based (`/api/v1`). Adding an operation is non-breaking and stays in v1. Any
 | Client-chosen precision | New optional request field; non-breaking |
 | Calculation history | Adds a repository port + persistence adapter |
 | Auth / rate limiting | New adapter-level concern |
-| `GET /operations` discovery | Useful once the operation list grows |
+| ~~`GET /operations` discovery~~ | Delivered in `add-operations-discovery`: `GET /api/v1/operations` lists name and arity |
 
 ## 7. Success criteria (v1)
 
@@ -127,3 +135,4 @@ Path-based (`/api/v1`). Adding an operation is non-breaking and stays in v1. Any
 | 2026-11-07 | `add-api-docs-toggle`: §3.3 docs can be disabled per environment (`prod` profile) |
 | 2026-11-07 | `add-power-modulo`: §3.1 POWER and MODULO; §3.2 validation order and two 422 types; §6 roadmap row delivered |
 | 2026-11-08 | `add-unary-operations`: §1, §3.1 SQRT and NEGATE (unary); §3.2 `b` optional for unary and absent from its response, 422 `negative-square-root`, validation order; §6 roadmap row delivered. A request with an unknown `operation` and no `b` now gets `unknown-operation` instead of `invalid-request` (both 400) |
+| 2026-11-08 | `add-operations-discovery`: §3.2 adds `GET /api/v1/operations` (name and arity of each Operation); §5 drops the discovery non-goal; §6 roadmap row delivered |

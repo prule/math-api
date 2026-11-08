@@ -54,7 +54,7 @@ config ──────────► all
 
 - Base path `/api/v{n}`. Adding an operation is non-breaking. Breaking changes → new major path version.
 - Request/response bodies are Java records.
-- Numeric values in responses are JSON strings (plain notation); requests accept numbers or strings.
+- Decimal values in responses (Operands, Results) are JSON strings (plain notation); requests accept numbers or strings. Small counts with no precision to lose, such as an Operation's `arity`, are JSON integers.
 - Errors MUST be RFC 9457 Problem Details via Spring `ProblemDetail`, from a single `@RestControllerAdvice`. Each error has a stable `type` URI listed in the PRD.
 - Status codes: `400` invalid input; `422` valid input that violates a domain rule.
 - Every endpoint MUST appear correctly in the generated OpenAPI docs: an explicit `@ApiResponse` for each status it returns (including the 200's media type, which springdoc otherwise documents as `*/*`), and a `application/problem+json` example for each Problem Details `type`. `ApiDocumentationTest` enforces this; extend it with every new endpoint or error type.
@@ -110,3 +110,4 @@ Write tests first (red → green → refactor).
 | 2026-11-07 | §7: change workflow moved into `CLAUDE.md` (mandatory plan and code reviews, retrospectives, merge on green); milestone audit |
 | 2026-11-08 | §7: the code-review step also runs `/code-review` (standards and spec conformance) alongside ponytail |
 | 2026-11-08 | `add-unary-operations`: §3 adding an operation includes declaring its arity |
+| 2026-11-08 | `add-operations-discovery`: §4 the string rule covers decimal values; counts such as `arity` are JSON integers |
