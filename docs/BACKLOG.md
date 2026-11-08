@@ -16,6 +16,7 @@
 | 5a | API docs toggle per environment (`prod` profile) | Done | `add-api-docs-toggle` |
 | 5b | Repo hygiene: README, unused test starters (v2 audit) | Done | `repo-hygiene` |
 | 6 | More binary operations (power, modulo) | Done | `add-power-modulo` |
+| 7 | Unary operations (sqrt, negate) | Done | `add-unary-operations` |
 
 Items 1–5 complete PRD v1; 5a is a v1 follow-up; 5b comes from the v2 milestone audit. Items under **Later** need a PRD update first (each one moves something out of the non-goals or roadmap).
 

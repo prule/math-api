@@ -47,7 +47,7 @@ config ──────────► all
 
 - Numbers are `BigDecimal`; never `double`/`float` for values.
 - Business rules are documented in [DOMAIN-MODEL.md](DOMAIN-MODEL.md) with an ID (`BR-n`). Code enforcing a rule and its tests SHOULD cite the ID in the test name or a comment.
-- Adding an operation: add the `Operation` constant, document its rules in DOMAIN-MODEL.md, add tests. Nothing else should need to change; if something does, the design has drifted — fix it.
+- Adding an operation: add the `Operation` constant with its arity (1 or 2), document its rules in DOMAIN-MODEL.md, add tests. Nothing else should need to change; if something does, the design has drifted — fix it.
 - Domain failures are domain exceptions, never HTTP-aware.
 
 ## 4. API conventions
@@ -109,3 +109,4 @@ Write tests first (red → green → refactor).
 | 2026-11-07 | `add-api-docs-toggle`: new §8 Configuration & profiles (`prod` profile); change log renumbered to §9 |
 | 2026-11-07 | §7: change workflow moved into `CLAUDE.md` (mandatory plan and code reviews, retrospectives, merge on green); milestone audit |
 | 2026-11-08 | §7: the code-review step also runs `/code-review` (standards and spec conformance) alongside ponytail |
+| 2026-11-08 | `add-unary-operations`: §3 adding an operation includes declaring its arity |

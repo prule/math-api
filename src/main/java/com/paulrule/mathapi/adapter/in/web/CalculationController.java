@@ -49,7 +49,9 @@ public class CalculationController {
                             }))
     @ApiResponse(
             responseCode = "422",
-            description = "Division by zero (BR-2), invalid POWER exponent (BR-5), or POWER result out of range (BR-6)",
+            description =
+                    "Division by zero (BR-2), invalid POWER exponent (BR-5), square root of a negative (BR-8), or POWER"
+                            + " result out of range (BR-6)",
             content =
                     @Content(
                             mediaType = "application/problem+json",
@@ -57,6 +59,9 @@ public class CalculationController {
                             examples = {
                                 @ExampleObject(name = "division-by-zero", value = ProblemExamples.DIVISION_BY_ZERO),
                                 @ExampleObject(name = "invalid-exponent", value = ProblemExamples.INVALID_EXPONENT),
+                                @ExampleObject(
+                                        name = "negative-square-root",
+                                        value = ProblemExamples.NEGATIVE_SQUARE_ROOT),
                                 @ExampleObject(
                                         name = "result-out-of-range",
                                         value = ProblemExamples.RESULT_OUT_OF_RANGE)
@@ -69,7 +74,7 @@ public class CalculationController {
         return new CalculationResponse(
                 calculation.operation().name(),
                 calculation.a().toPlainString(),
-                calculation.b().toPlainString(),
+                calculation.b() == null ? null : calculation.b().toPlainString(),
                 result.toPlainString());
     }
 }

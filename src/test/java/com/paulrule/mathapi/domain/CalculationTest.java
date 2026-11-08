@@ -3,6 +3,7 @@ package com.paulrule.mathapi.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
@@ -11,6 +12,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -47,7 +49,39 @@ class CalculationTest {
     void rejectsNullComponents() {
         assertThatNullPointerException().isThrownBy(() -> new Calculation(null, BigDecimal.ONE, BigDecimal.ONE));
         assertThatNullPointerException().isThrownBy(() -> new Calculation(Operation.ADD, null, BigDecimal.ONE));
-        assertThatNullPointerException().isThrownBy(() -> new Calculation(Operation.ADD, BigDecimal.ONE, null));
+    }
+
+    // --- BR-9: Operand count matches the Operation's arity ---
+
+    @Test
+    void binaryOperationWithoutBIsRejected_BR9() {
+        var ex = catchThrowableOfType(
+                ArityMismatchException.class, () -> new Calculation(Operation.ADD, BigDecimal.ONE, null));
+
+        assertThat(ex.operation()).isEqualTo(Operation.ADD);
+    }
+
+    @ParameterizedTest
+    @EnumSource(
+            value = Operation.class,
+            names = {"SQRT", "NEGATE"})
+    void unaryOperationWithBIsRejected_BR9(Operation unary) {
+        var ex = catchThrowableOfType(
+                ArityMismatchException.class, () -> new Calculation(unary, BigDecimal.ONE, BigDecimal.ONE));
+
+        assertThat(ex.operation()).isEqualTo(unary);
+    }
+
+    @Test
+    void unaryOperationWithoutBIsAccepted_BR9() {
+        assertThat(new Calculation(Operation.NEGATE, BigDecimal.ONE, null).result())
+                .isEqualByComparingTo("-1");
+    }
+
+    @Test
+    void arityIsCheckedBeforeOperandLimits_BR9() {
+        assertThatThrownBy(() -> new Calculation(Operation.SQRT, new BigDecimal("4"), new BigDecimal("1E+1001")))
+                .isInstanceOf(ArityMismatchException.class);
     }
 
     // --- BR-1: operand limits, checked on the Operand as written ---

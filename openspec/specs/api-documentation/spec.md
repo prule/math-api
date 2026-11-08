@@ -34,27 +34,28 @@ The OpenAPI document SHALL describe `POST /api/v1/calculations` with an `applica
 - **THEN** the response codes are exactly `200`, `400` and `422`
 
 ### Requirement: Operands documented as number or string
-The request schema SHALL type `a` and `b` as either a number or a string, and mark `operation`, `a` and `b` as required.
+The request schema SHALL type `a` and `b` as either a number or a string, and mark only `operation` and `a` as required. The description of `b` SHALL say it is required for binary Operations and must be omitted for unary ones.
 
 #### Scenario: Operand types
 - **WHEN** a client reads the request schema
 - **THEN** `a` and `b` each allow both `number` and `string`
-- **AND** `operation`, `a` and `b` are listed as required
+- **AND** exactly `operation` and `a` are listed as required
+- **AND** `b`'s description mentions both binary and unary Operations
 
 ### Requirement: Allowed operations documented from the supported set
 The request schema SHALL list `operation`'s allowed values as exactly the names of the supported Operations, case-sensitive, so the documentation changes whenever an Operation is added or removed.
 
 #### Scenario: Allowed values match supported Operations
 - **WHEN** a client reads the request schema
-- **THEN** `operation`'s allowed values are exactly `ADD`, `SUBTRACT`, `MULTIPLY`, `DIVIDE`, `POWER`, `MODULO`
+- **THEN** `operation`'s allowed values are exactly `ADD`, `SUBTRACT`, `MULTIPLY`, `DIVIDE`, `POWER`, `MODULO`, `SQRT`, `NEGATE`
 
 ### Requirement: Error responses documented
-The calculation operation SHALL document a 400 response and a 422 response, each with content type `application/problem+json` and a Problem Details schema. The 400 response SHALL include one example per `type` (`/problems/invalid-request`, `/problems/unknown-operation`, `/problems/operand-out-of-range`), and the 422 response one example per `type` (`/problems/division-by-zero`, `/problems/invalid-exponent`, `/problems/result-out-of-range`).
+The calculation operation SHALL document a 400 response and a 422 response, each with content type `application/problem+json` and a Problem Details schema. The 400 response SHALL include one example per `type` (`/problems/invalid-request`, `/problems/unknown-operation`, `/problems/operand-out-of-range`), and the 422 response one example per `type` (`/problems/division-by-zero`, `/problems/invalid-exponent`, `/problems/negative-square-root`, `/problems/result-out-of-range`).
 
 #### Scenario: Each error type has an example
 - **WHEN** a client reads the calculation operation's responses
 - **THEN** response `400` has `application/problem+json` examples whose `type` values are `/problems/invalid-request`, `/problems/unknown-operation` and `/problems/operand-out-of-range`
-- **AND** response `422` has `application/problem+json` examples whose `type` values are `/problems/division-by-zero`, `/problems/invalid-exponent` and `/problems/result-out-of-range`
+- **AND** response `422` has `application/problem+json` examples whose `type` values are `/problems/division-by-zero`, `/problems/invalid-exponent`, `/problems/negative-square-root` and `/problems/result-out-of-range`
 
 ### Requirement: API documentation can be disabled per environment
 API documentation SHALL be enabled by default and disabled when the service runs with the `prod` profile. While disabled, `GET /v3/api-docs`, `GET /swagger-ui.html`, any path under `/swagger-ui/` and the Swagger UI webjar under `/webjars/swagger-ui/` SHALL return HTTP 404, and all other endpoints SHALL behave exactly as when documentation is enabled.
@@ -77,4 +78,4 @@ The documented `/problems/unknown-operation` example SHALL list exactly the name
 
 #### Scenario: Example matches the supported set
 - **WHEN** a client reads the 400 response's `unknown-operation` example
-- **THEN** its `detail` lists exactly `ADD, SUBTRACT, MULTIPLY, DIVIDE, POWER, MODULO`
+- **THEN** its `detail` lists exactly `ADD, SUBTRACT, MULTIPLY, DIVIDE, POWER, MODULO, SQRT, NEGATE`

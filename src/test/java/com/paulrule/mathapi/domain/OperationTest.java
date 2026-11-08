@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -42,8 +43,64 @@ class OperationTest {
         "MODULO, 6, 3, 0",
         "MODULO, 1E+1000, 7, 4",
     })
-    void applies(Operation operation, String a, String b, String expected) {
+    void appliesBinary(Operation operation, String a, String b, String expected) {
         assertThat(operation.apply(new BigDecimal(a), new BigDecimal(b))).isEqualByComparingTo(expected);
+    }
+
+    @ParameterizedTest(name = "{0} {1} = {2}")
+    @CsvSource({
+        // NEGATE (BR-3: exact)
+        "NEGATE, 5, -5",
+        "NEGATE, -2.50, 2.50",
+        "NEGATE, 0, 0",
+        "NEGATE, -0, 0",
+        "NEGATE, 0.00, 0",
+        // SQRT (BR-3: 34 significant digits, HALF_EVEN)
+        "SQRT, 4, 2",
+        "SQRT, 0.25, 0.5",
+        "SQRT, 1E+1000, 1E+500",
+        "SQRT, 1E-1000, 1E-500",
+        "SQRT, 2, 1.414213562373095048801688724209698",
+        "SQRT, 10, 3.162277660168379331998893544432719",
+        "SQRT, 0, 0",
+        "SQRT, -0, 0",
+        "SQRT, 0.00, 0",
+    })
+    void appliesUnary(Operation operation, String a, String expected) {
+        assertThat(operation.apply(new BigDecimal(a), null)).isEqualByComparingTo(expected);
+    }
+
+    @ParameterizedTest(name = "sqrt {0} = {1}")
+    @CsvSource({
+        // exact roots of 35 digits, tie on the 35th: HALF_EVEN rounds to the even neighbour (HALF_UP would not)
+        "1.00000000000000000000000000000000100000000000000000000000000000000025, 1",
+        "1.00000000000000000000000000000000300000000000000000000000000000000225, 1.000000000000000000000000000000002",
+    })
+    void sqrtRoundsTiesToEven_BR3(String a, String expected) {
+        var result = Operation.SQRT.apply(new BigDecimal(a), null);
+
+        assertThat(result.stripTrailingZeros().toPlainString()).isEqualTo(expected);
+    }
+
+    @ParameterizedTest(name = "sqrt {0}")
+    @CsvSource({"-1", "-0.0001"})
+    void sqrtOfANegativeIsRejected_BR8(String a) {
+        assertThatThrownBy(() -> Operation.SQRT.apply(new BigDecimal(a), null))
+                .isInstanceOf(NegativeSquareRootException.class);
+    }
+
+    @Test
+    void arityIsOneForUnaryAndTwoForBinaryOperations_BR9() {
+        assertThat(Arrays.stream(Operation.values()).filter(op -> op.arity() == 1))
+                .containsExactly(Operation.SQRT, Operation.NEGATE);
+        assertThat(Arrays.stream(Operation.values()).filter(op -> op.arity() == 2))
+                .containsExactly(
+                        Operation.ADD,
+                        Operation.SUBTRACT,
+                        Operation.MULTIPLY,
+                        Operation.DIVIDE,
+                        Operation.POWER,
+                        Operation.MODULO);
     }
 
     @Test

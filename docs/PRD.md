@@ -6,7 +6,7 @@
 ## 1. Problem and goal
 
 Clients need exact, predictable arithmetic over HTTP without each one re-implementing decimal handling.
-Math API is a stateless REST service that applies one arithmetic operation to two operands and returns an exact decimal result.
+Math API is a stateless REST service that applies one arithmetic operation to one or two operands and returns an exact decimal result.
 
 ## 2. Users
 
@@ -24,8 +24,10 @@ Internal services and developers (portfolio / learning-grade). No public-interne
 | `DIVIDE`   | a ÷ b   | Rounded to 34 significant digits (BR-3); b = 0 rejected (BR-2) |
 | `POWER`    | a ^ b   | Integer b, \|b\| ≤ 999 (BR-5); exact power rounded to 34 digits (BR-3); result scale within ±1000 (BR-6); 0 ^ negative rejected (BR-2) |
 | `MODULO`   | a mod b | Truncated remainder, sign of a: −7 mod 3 = −1 (BR-7); exact; b = 0 rejected (BR-2) |
+| `SQRT`     | √a      | Unary. Rounded to 34 significant digits (BR-3); negative a rejected (BR-8) |
+| `NEGATE`   | −a      | Unary. Exact |
 
-All operations are binary. Semantics and rules live in [DOMAIN-MODEL.md](DOMAIN-MODEL.md).
+`SQRT` and `NEGATE` are unary (operand `a` only); all others are binary (BR-9). Semantics and rules live in [DOMAIN-MODEL.md](DOMAIN-MODEL.md).
 
 ### 3.2 API contract
 
@@ -43,21 +45,33 @@ Request — operands may be JSON numbers or strings:
 { "operation": "DIVIDE", "a": "1", "b": "3", "result": "0.3333333333333333333333333333333333" }
 ```
 
+A unary Operation takes no `b`, and its response has no `b` key:
+
+```json
+{ "operation": "SQRT", "a": "2" }
+```
+
+```json
+{ "operation": "SQRT", "a": "2", "result": "1.414213562373095048801688724209698" }
+```
+
 - `operation` must be exactly a supported name (case-sensitive: `ADD`, not `add`).
+- `b` is required for a binary Operation and must be omitted (or `null`) for a unary one; otherwise the request is rejected as `invalid-request` (BR-9).
 - `a` and `b` are echoed as received, in plain notation and with their given scale (`1e2` → `"100"`, `"1.50"` → `"1.50"`). Only `result` is normalised (BR-4).
 - Every error response (including framework errors such as 415) is Problem Details with `type`, `title`, `status` and a human-readable `detail` that exposes no internals.
 - Request limits: a body over 16,384 characters, or any JSON string or number over 1,000 characters, is rejected as `invalid-request` before parsing into numbers. Operand limits (BR-1) are reported as `operand-out-of-range`, naming the operand but never echoing its value.
-- Only the first failure is reported, checked in this order: invalid request → unknown operation → operand out of range (BR-1) → invalid exponent (BR-5) → division by zero (BR-2) → result out of range (BR-6).
+- Only the first failure is reported, checked in this order: invalid request → unknown operation → operand count (BR-9, reported as invalid request) → operand out of range (BR-1) → invalid exponent (BR-5) → division by zero (BR-2) → negative square root (BR-8) → result out of range (BR-6).
 
 Errors use RFC 9457 Problem Details (`application/problem+json`):
 
 | Status | When | `type` |
 |--------|------|--------|
-| 400 | Malformed JSON, missing field, non-numeric operand | `/problems/invalid-request` |
+| 400 | Malformed JSON, missing field, `b` not matching the Operation's arity (BR-9), non-numeric operand | `/problems/invalid-request` |
 | 400 | Unknown `operation` | `/problems/unknown-operation` |
 | 400 | Operand outside limits (BR-1) | `/problems/operand-out-of-range` |
 | 422 | Division by zero (BR-2) | `/problems/division-by-zero` |
 | 422 | `POWER` exponent not an integer or \|b\| > 999 (BR-5) | `/problems/invalid-exponent` |
+| 422 | `SQRT` of a negative operand (BR-8) | `/problems/negative-square-root` |
 | 422 | `POWER` result scale outside ±1000 (BR-6) | `/problems/result-out-of-range` |
 
 ### 3.3 Supporting endpoints
@@ -90,7 +104,7 @@ Path-based (`/api/v1`). Adding an operation is non-breaking and stays in v1. Any
 | Item | Impact when it lands |
 |------|---------------------|
 | ~~More binary operators (power, modulo, …)~~ | Delivered in `add-power-modulo` (POWER, MODULO); further operators follow the same pattern |
-| Unary operations (sqrt, negate, …) | Domain model must express arity; request shape may need `b` optional — decide in its OpenSpec change |
+| ~~Unary operations (sqrt, negate, …)~~ | Delivered in `add-unary-operations` (SQRT, NEGATE): arity on the Operation; `b` omitted for unary |
 | Client-chosen precision | New optional request field; non-breaking |
 | Calculation history | Adds a repository port + persistence adapter |
 | Auth / rate limiting | New adapter-level concern |
@@ -112,3 +126,4 @@ Path-based (`/api/v1`). Adding an operation is non-breaking and stays in v1. Any
 | 2026-11-07 | `add-api-docs`: §3.3 OpenAPI 3.1 docs delivered; v1 scope complete |
 | 2026-11-07 | `add-api-docs-toggle`: §3.3 docs can be disabled per environment (`prod` profile) |
 | 2026-11-07 | `add-power-modulo`: §3.1 POWER and MODULO; §3.2 validation order and two 422 types; §6 roadmap row delivered |
+| 2026-11-08 | `add-unary-operations`: §1, §3.1 SQRT and NEGATE (unary); §3.2 `b` optional for unary and absent from its response, 422 `negative-square-root`, validation order; §6 roadmap row delivered. A request with an unknown `operation` and no `b` now gets `unknown-operation` instead of `invalid-request` (both 400) |
