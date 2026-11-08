@@ -13,6 +13,7 @@ import java.time.Duration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -106,6 +107,7 @@ class CalculationControllerTest {
                 "missing operation    | {\"a\":\"1\",\"b\":\"2\"}",
                 "non-numeric operand  | {\"operation\":\"ADD\",\"a\":\"abc\",\"b\":\"2\"}",
                 "boolean operand      | {\"operation\":\"ADD\",\"a\":true,\"b\":\"2\"}",
+                "unary missing a      | {\"operation\":\"SQRT\"}",
             })
     void rejectsInvalidRequest(String caseName, String body) throws Exception {
         expectProblem(postJson(body), 400, "/problems/invalid-request");
@@ -312,6 +314,129 @@ class CalculationControllerTest {
                 () -> calculate("POWER", quoted(nearOne), quoted("999"))
                         .andExpect(status().isOk())
                         .andExpect(jsonPath("$.result").value("1")));
+    }
+
+    // --- unary Operations (spec: Perform a Calculation, Operand count, NEGATE, SQRT, square root of a negative) ---
+
+    private ResultActions calculateUnary(String operation, String a) throws Exception {
+        return postJson("{\"operation\":\"%s\",\"a\":%s}".formatted(operation, a));
+    }
+
+    @Test
+    void unaryResponseHasNoBKey() throws Exception {
+        calculateUnary("NEGATE", quoted("2"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("""
+                        {"operation":"NEGATE","a":"2","result":"-2"}""", JsonCompareMode.STRICT));
+    }
+
+    @Test
+    void nullBCountsAsOmittedForUnary() throws Exception {
+        calculate("SQRT", quoted("4"), "null")
+                .andExpect(status().isOk())
+                .andExpect(content().json("""
+                        {"operation":"SQRT","a":"4","result":"2"}""", JsonCompareMode.STRICT));
+    }
+
+    @Test
+    void rejectsBForUnaryOperation() throws Exception {
+        expectProblem(calculate("SQRT", quoted("4"), quoted("1")), 400, "/problems/invalid-request")
+                .andExpect(jsonPath("$.detail").value(containsString("'b'")))
+                .andExpect(jsonPath("$.detail").value(containsString("SQRT")));
+    }
+
+    @Test
+    void missingBForBinaryOperationNamesB() throws Exception {
+        expectProblem(postJson("{\"operation\":\"ADD\",\"a\":\"1\"}"), 400, "/problems/invalid-request")
+                .andExpect(jsonPath("$.detail").value(containsString("'b'")));
+    }
+
+    @ParameterizedTest(name = "{0} {1} = {2}")
+    @CsvSource({
+        "NEGATE, 5, -5",
+        "NEGATE, -2.50, 2.5",
+        "NEGATE, 0, 0",
+        "NEGATE, -0, 0",
+        "NEGATE, 0.00, 0",
+        "SQRT, 4, 2",
+        "SQRT, 0.25, 0.5",
+        "SQRT, 2, 1.414213562373095048801688724209698",
+        "SQRT, 10, 3.162277660168379331998893544432719",
+        "SQRT, 1.00000000000000000000000000000000100000000000000000000000000000000025, 1",
+        "SQRT, 1.00000000000000000000000000000000300000000000000000000000000000000225, 1.000000000000000000000000000000002",
+        "SQRT, 0, 0",
+        "SQRT, -0, 0",
+        "SQRT, 0.00, 0",
+    })
+    void performsUnaryOperation(String operation, String a, String result) throws Exception {
+        calculateUnary(operation, quoted(a))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result").value(result))
+                .andExpect(jsonPath("$.b").doesNotExist());
+    }
+
+    @Test
+    void unaryOperandEchoedWithItsScale() throws Exception {
+        calculateUnary("NEGATE", quoted("-2.50")).andExpect(jsonPath("$.a").value("-2.50"));
+    }
+
+    @Test
+    void sqrtOfLargestOperandIsExactAndPlain() throws Exception {
+        calculateUnary("SQRT", quoted("1E+1000"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result").value("1" + "0".repeat(500)));
+    }
+
+    @ParameterizedTest(name = "SQRT {0}")
+    @CsvSource({"-1", "-0.0001"})
+    void rejectsSquareRootOfANegative(String a) throws Exception {
+        expectProblem(calculateUnary("SQRT", quoted(a)), 422, "/problems/negative-square-root");
+    }
+
+    @Test
+    void unknownOperationWinsOverOperandCount() throws Exception {
+        expectProblem(calculateUnary("NOT_AN_OPERATION", quoted("1")), 400, "/problems/unknown-operation");
+    }
+
+    @Test
+    void operandCountWinsOverOperandLimits() throws Exception {
+        expectProblem(calculate("SQRT", quoted("4"), quoted("1E+1001")), 400, "/problems/invalid-request");
+    }
+
+    @Test
+    void operandLimitsWinOverSquareRootOfANegative() throws Exception {
+        expectProblem(calculateUnary("SQRT", quoted("-1E+1001")), 400, "/problems/operand-out-of-range");
+    }
+
+    // --- OpenAPI examples (spec: Error responses documented) ---
+
+    // ProblemExamples is copied by hand into annotations, so this is what keeps each example equal to the real body.
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("problemExamples")
+    void eachProblemExampleIsTheRealResponse(String name, String example, String body) throws Exception {
+        postJson(body).andExpect(content().json(example, JsonCompareMode.STRICT));
+    }
+
+    static Object[][] problemExamples() {
+        return new Object[][] {
+            {"invalid-request", ProblemExamples.INVALID_REQUEST, "{\"operation\":\"ADD\",\"a\":1,"},
+            {"unknown-operation", ProblemExamples.UNKNOWN_OPERATION, "{\"operation\":\"POW\",\"a\":\"2\",\"b\":\"3\"}"},
+            {
+                "operand-out-of-range",
+                ProblemExamples.OPERAND_OUT_OF_RANGE,
+                "{\"operation\":\"ADD\",\"a\":\"1E-1001\",\"b\":\"1\"}"
+            },
+            {"division-by-zero", ProblemExamples.DIVISION_BY_ZERO, "{\"operation\":\"DIVIDE\",\"a\":\"1\",\"b\":\"0\"}"
+            },
+            {"invalid-exponent", ProblemExamples.INVALID_EXPONENT, "{\"operation\":\"POWER\",\"a\":\"2\",\"b\":\"0.5\"}"
+            },
+            {"negative-square-root", ProblemExamples.NEGATIVE_SQUARE_ROOT, "{\"operation\":\"SQRT\",\"a\":\"-1\"}"},
+            {
+                "result-out-of-range",
+                ProblemExamples.RESULT_OUT_OF_RANGE,
+                "{\"operation\":\"POWER\",\"a\":\"100\",\"b\":\"999\"}"
+            },
+        };
     }
 
     @Test

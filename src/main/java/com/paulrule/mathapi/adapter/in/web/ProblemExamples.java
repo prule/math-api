@@ -5,12 +5,12 @@ final class ProblemExamples {
 
     static final String INVALID_REQUEST = """
             {"type":"/problems/invalid-request","title":"Invalid request","status":400,\
-            "detail":"Request body must be JSON with 'operation' and decimal-number operands 'a' and 'b'.",\
+            "detail":"Request body must be JSON with 'operation' and decimal-number operand 'a' (and 'b' for a binary operation).",\
             "instance":"/api/v1/calculations"}""";
 
     static final String UNKNOWN_OPERATION = """
             {"type":"/problems/unknown-operation","title":"Unknown operation","status":400,\
-            "detail":"Unknown operation 'POW'. Supported operations (case-sensitive): ADD, SUBTRACT, MULTIPLY, DIVIDE, POWER, MODULO.",\
+            "detail":"Unknown operation 'POW'. Supported operations (case-sensitive): ADD, SUBTRACT, MULTIPLY, DIVIDE, POWER, MODULO, SQRT, NEGATE.",\
             "instance":"/api/v1/calculations"}""";
 
     static final String OPERAND_OUT_OF_RANGE = """
@@ -25,6 +25,10 @@ final class ProblemExamples {
     static final String INVALID_EXPONENT = """
             {"type":"/problems/invalid-exponent","title":"Invalid exponent","status":422,\
             "detail":"POWER needs an integer exponent between -999 and 999.","instance":"/api/v1/calculations"}""";
+
+    static final String NEGATIVE_SQUARE_ROOT = """
+            {"type":"/problems/negative-square-root","title":"Negative square root","status":422,\
+            "detail":"SQRT needs a non-negative operand.","instance":"/api/v1/calculations"}""";
 
     static final String RESULT_OUT_OF_RANGE = """
             {"type":"/problems/result-out-of-range","title":"Result out of range","status":422,\

@@ -3,7 +3,7 @@ package com.paulrule.mathapi.domain;
 import java.math.BigDecimal;
 import java.util.Objects;
 
-/** One Operation applied to two Operands. */
+/** One Operation applied to its Operands; b is null for a unary Operation (BR-9). */
 public record Calculation(Operation operation, BigDecimal a, BigDecimal b) {
 
     /** BR-1, applied to the Operand as written so both the arithmetic and the echoed operands stay bounded. */
@@ -14,9 +14,13 @@ public record Calculation(Operation operation, BigDecimal a, BigDecimal b) {
     public Calculation {
         Objects.requireNonNull(operation, "operation");
         Objects.requireNonNull(a, "a");
-        Objects.requireNonNull(b, "b");
+        if ((b == null) != (operation.arity() == 1)) {
+            throw new ArityMismatchException(operation);
+        }
         requireWithinLimits("a", a);
-        requireWithinLimits("b", b);
+        if (b != null) {
+            requireWithinLimits("b", b);
+        }
     }
 
     private static void requireWithinLimits(String name, BigDecimal operand) {

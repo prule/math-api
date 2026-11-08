@@ -99,7 +99,7 @@ class ApiDocumentationTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    void operandsAllowNumberOrStringAndAllFieldsAreRequired() throws Exception {
+    void operandsAllowNumberOrStringAndOnlyOperationAndAAreRequired() throws Exception {
         var docs = apiDocs();
         Map<String, Object> request =
                 resolve(docs, docs.read(POST + ".requestBody.content['application/json'].schema"));
@@ -107,7 +107,15 @@ class ApiDocumentationTest {
 
         assertThat(allowedTypes(properties.get("a"))).containsExactlyInAnyOrder("number", "string");
         assertThat(allowedTypes(properties.get("b"))).containsExactlyInAnyOrder("number", "string");
-        assertThat((List<String>) request.get("required")).containsExactlyInAnyOrder("operation", "a", "b");
+        assertThat((List<String>) request.get("required")).containsExactlyInAnyOrder("operation", "a");
+        // b is not required in the schema, so its description says when it is, naming the unary Operations from the
+        // enum.
+        var unary = Arrays.stream(Operation.values())
+                .filter(op -> op.arity() == 1)
+                .map(Enum::name)
+                .toList();
+        assertThat((String) properties.get("b").get("description"))
+                .contains("binary", "unary Operation (" + String.join(", ", unary) + ")");
     }
 
     @Test
@@ -141,7 +149,10 @@ class ApiDocumentationTest {
                         "/problems/invalid-request", "/problems/unknown-operation", "/problems/operand-out-of-range");
         assertThat(exampleTypes(docs, "422"))
                 .containsExactlyInAnyOrder(
-                        "/problems/division-by-zero", "/problems/invalid-exponent", "/problems/result-out-of-range");
+                        "/problems/division-by-zero",
+                        "/problems/invalid-exponent",
+                        "/problems/negative-square-root",
+                        "/problems/result-out-of-range");
     }
 
     @Test

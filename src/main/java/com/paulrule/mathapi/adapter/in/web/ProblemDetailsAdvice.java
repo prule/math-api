@@ -1,8 +1,10 @@
 package com.paulrule.mathapi.adapter.in.web;
 
+import com.paulrule.mathapi.domain.ArityMismatchException;
 import com.paulrule.mathapi.domain.Calculation;
 import com.paulrule.mathapi.domain.DivisionByZeroException;
 import com.paulrule.mathapi.domain.InvalidExponentException;
+import com.paulrule.mathapi.domain.NegativeSquareRootException;
 import com.paulrule.mathapi.domain.OperandOutOfRangeException;
 import com.paulrule.mathapi.domain.Operation;
 import com.paulrule.mathapi.domain.ResultOutOfRangeException;
@@ -35,12 +37,13 @@ public class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
     static final URI OPERAND_OUT_OF_RANGE = URI.create("/problems/operand-out-of-range");
     static final URI INVALID_EXPONENT = URI.create("/problems/invalid-exponent");
     static final URI RESULT_OUT_OF_RANGE = URI.create("/problems/result-out-of-range");
+    static final URI NEGATIVE_SQUARE_ROOT = URI.create("/problems/negative-square-root");
 
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        var problem =
-                invalidRequest("Request body must be JSON with 'operation' and decimal-number operands 'a' and 'b'.");
+        var problem = invalidRequest(
+                "Request body must be JSON with 'operation' and decimal-number operand 'a' (and 'b' for a binary operation).");
         return handleExceptionInternal(ex, problem, headers, status, request);
     }
 
@@ -65,6 +68,20 @@ public class ProblemDetailsAdvice extends ResponseEntityExceptionHandler {
         problem.setType(UNKNOWN_OPERATION);
         problem.setTitle("Unknown operation");
         return problem;
+    }
+
+    @ExceptionHandler(ArityMismatchException.class)
+    ProblemDetail handleArityMismatch(ArityMismatchException ex) {
+        var operation = ex.operation();
+        return invalidRequest(
+                operation.arity() == 2
+                        ? "Missing required field(s): 'b'."
+                        : "'b' must be omitted for " + operation.name() + ", which takes one operand.");
+    }
+
+    @ExceptionHandler(NegativeSquareRootException.class)
+    ProblemDetail handleNegativeSquareRoot(NegativeSquareRootException ex) {
+        return unprocessable(NEGATIVE_SQUARE_ROOT, "Negative square root", "SQRT needs a non-negative operand.");
     }
 
     @ExceptionHandler(DivisionByZeroException.class)

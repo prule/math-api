@@ -5,9 +5,9 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 /** Request body; operands bind from JSON numbers (read exactly) or JSON strings. */
-@Schema(description = "One Operation applied to two Operands")
+@Schema(description = "One Operation applied to its Operands: a, plus b for a binary Operation")
 public record CalculationRequest(
-        // Allowed values are filled from the Operation enum by config.OpenApiConfig.
+        // Allowed values (and b's unary/binary rule) are filled from the Operation enum by config.OpenApiConfig.
         @Schema(description = "Operation name, case-sensitive", example = "ADD") @NotNull
         String operation,
 
@@ -22,7 +22,6 @@ public record CalculationRequest(
                 types = {"number", "string"},
                 description = CalculationRequest.OPERAND_DESCRIPTION,
                 example = "0.2")
-        @NotNull
         BigDecimal b) {
 
     static final String OPERAND_DESCRIPTION =
