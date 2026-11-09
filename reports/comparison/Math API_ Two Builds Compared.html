@@ -1,0 +1,250 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Math API: Two Builds Compared</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,600&display=swap">
+<style>
+/* Layout: one reading column (~70ch) with wide tables/charts allowed to scroll inside their own box. */
+:root{
+  --bg:#f7f7f4; --surface:#ffffff; --fg:#1d1f22; --muted:#5b6068; --rule:#dfe0da;
+  --accent:#2a5d8a;
+  --s1:#2a78d6; /* original (single agent) */
+  --s2:#eb6834; /* rebuild (pipeline) */
+  --good:#1f7a3d; --bad:#b3261e; --even:#6b6f76;
+  --display:"Fraunces",Georgia,serif; --body:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#17181a; --surface:#1f2023; --fg:#ecebe6; --muted:#a6a9ad; --rule:#34363a; --accent:#8db8e3;
+  --s1:#3987e5; --s2:#d95926; --good:#5cc27d; --bad:#f08079; --even:#a0a3a8; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#17181a; --surface:#1f2023; --fg:#ecebe6; --muted:#a6a9ad; --rule:#34363a; --accent:#8db8e3;
+  --s1:#3987e5; --s2:#d95926; --good:#5cc27d; --bad:#f08079; --even:#a0a3a8; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:15px/1.6 var(--body);}
+.wrap{max-width:980px;margin:0 auto;padding-block:40px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:44px}
+h1{font:600 clamp(28px,4.2vw,40px)/1.15 var(--display);margin:0;text-wrap:balance}
+h2{font:600 22px/1.25 var(--display);margin:0 0 12px;text-wrap:balance}
+h3{font:600 15px/1.3 var(--body);margin:18px 0 6px}
+p{margin:0 0 10px;max-width:70ch}
+.lede{color:var(--muted);font-size:16px;max-width:70ch}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+code{font:13px var(--mono);background:color-mix(in srgb,var(--rule) 55%,transparent);padding:1px 5px;border-radius:4px}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.key{display:inline-flex;align-items:center;gap:6px}.key i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;min-width:0}
+.tile .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.tile .row{display:flex;justify-content:space-between;gap:8px;font:500 15px var(--mono);font-variant-numeric:tabular-nums;margin-top:8px}
+.tile .row span:first-child{color:var(--muted);font-family:var(--body);font-size:13px}
+.tile .ratio{margin-top:8px;font-size:13px;color:var(--fg)}
+.scroll{overflow-x:auto;background:var(--surface);border:1px solid var(--rule);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-weight:600;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:color-mix(in srgb,var(--rule) 30%,var(--surface))}
+tr:last-child td{border-bottom:0}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:13px;white-space:nowrap}
+.pill{display:inline-block;font:500 11px/1 var(--mono);padding:4px 7px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.pill.o{color:var(--s1)}.pill.r{color:var(--s2)}.pill.e{color:var(--even)}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.chart{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:14px 14px 8px;min-width:0}
+.chart h3{margin:0 0 4px}.chart .sub{font-size:12px;color:var(--muted);margin-bottom:6px}
+svg text{fill:var(--muted);font:12px var(--body)}svg .v{fill:var(--fg);font:500 11px var(--mono)}
+svg rect.bar:hover{opacity:.8}
+.note{border-left:3px solid var(--accent);padding:4px 0 4px 14px;color:var(--fg);max-width:72ch}
+ul{margin:0 0 10px;padding-left:20px;max-width:72ch}li{margin:3px 0}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.two>div{min-width:0}
+footer{color:var(--muted);font-size:13px;border-top:1px solid var(--rule);padding-top:16px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">MVP · backlog items 1–5 · 9 Nov 2026</div>
+  <h1>Math API: two builds compared</h1>
+  <p class="lede">The same PRD, domain model, standards and backlog, built twice. The original <code>prule/math-api</code> used one agent working through OpenSpec. The rebuild <code>prule/math-api-sdlc-pipeline</code> used the sdlc-pipeline: five specialist agents and two human gates. This page compares the two up to the end of the MVP (original items 1–5, rebuild B-1–B-5).</p>
+  <div class="legend" style="margin-top:12px"><span class="key"><i style="background:var(--s1)"></i>Original: single agent</span><span class="key"><i style="background:var(--s2)"></i>Rebuild: multi-agent pipeline</span></div>
+</header>
+
+<section>
+  <h2>The short version</h2>
+  <div class="tiles">
+    <div class="tile"><div class="lbl">Active time, items 1–5</div>
+      <div class="row"><span>Original</span><span>75 min</span></div>
+      <div class="row"><span>Rebuild</span><span>133 min</span></div>
+      <div class="ratio">1.8× longer</div></div>
+    <div class="tile"><div class="lbl">Output tokens, items 1–5</div>
+      <div class="row"><span>Original</span><span>217k</span></div>
+      <div class="row"><span>Rebuild</span><span>562k</span></div>
+      <div class="ratio">2.6× more</div></div>
+    <div class="tile"><div class="lbl">Review findings recorded</div>
+      <div class="row"><span>Original</span><span>0</span></div>
+      <div class="row"><span>Rebuild</span><span>36</span></div>
+      <div class="ratio">The original had no review step until after v1</div></div>
+    <div class="tile"><div class="lbl">Tests at end of MVP</div>
+      <div class="row"><span>Original</span><span>108</span></div>
+      <div class="row"><span>Rebuild</span><span>155</span></div>
+      <div class="ratio">Both green; the rebuild's are mutation-checked</div></div>
+  </div>
+  <p style="margin-top:16px">The pipeline cost about twice the time and two and a half times the output tokens. In return it gave five planned and reviewed changes, five retrospectives, a ledger of lessons, and tests proven to catch broken code. The two codebases ended up very close: the same architecture, the same request limits and the same domain shape. Each is better than the other on a few specific behaviours (see <a href="#code">Code</a>).</p>
+</section>
+
+<section>
+  <h2>Two methodologies</h2>
+  <div class="scroll"><table>
+    <thead><tr><th></th><th>Original (items 1–5)</th><th>Rebuild (B-1–B-5)</th></tr></thead>
+    <tbody>
+      <tr><td>Who does the work</td><td>One agent, in the main session</td><td>An orchestrator plus five agents: architect, spec-reviewer, junior-dev, qa, senior-dev</td></tr>
+      <tr><td>Steps per change</td><td><code>/opsx:propose</code> → <code>/opsx:apply</code> → archive → PR</td><td>Use case → plan → spec review → <b>Gate 1</b> → implement → QA (<code>opsx:verify</code>) → code review → <b>Gate 2</b> → archive → retrospective → PR</td></tr>
+      <tr><td>Input per change</td><td>An implementation-level OpenSpec prompt from <code>BACKLOG.md</code></td><td>A business-level use case (<code>use-cases/UC-00n</code>), with no implementation detail</td></tr>
+      <tr><td>Reviews</td><td>None in v1. The ponytail plan and code reviews were added at PR #7, and <code>/code-review</code> at PR #12.</td><td>Three agent gates per change (plan, QA, code), plus two human gates</td></tr>
+      <tr><td>Learning loop</td><td>Retrospectives started at item 6</td><td>A retrospective every change, plus <code>LEDGER.md</code> (19 open lessons after B-5)</td></tr>
+      <tr><td>Human touchpoints</td><td>2 questions in total (in setup)</td><td>11 decisions: 2 per change, plus one budget check on B-4</td></tr>
+      <tr><td>Starting docs</td><td>Grew as the build went (PRD, then the domain model, then standards)</td><td>The original's <i>final</i> PRD, domain model and standards</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Effort per item</h2>
+  <p>The figures come from the two session logs, split at each <code>gh pr merge</code>. <b>Active time</b> counts the time between log events, ignoring any gap over 3 minutes, which removes waits for a human. Item 1 in the original also includes project setup and some PRD grilling. The rebuild's setup is shown separately and left out of the totals.</p>
+  <div class="charts">
+    <div class="chart"><h3>Active minutes</h3><div class="sub">Per backlog item</div><svg id="c1" role="img" aria-label="Active minutes per item, original versus rebuild" width="100%"></svg></div>
+    <div class="chart"><h3>Output tokens (thousands)</h3><div class="sub">Per backlog item, all agents included</div><svg id="c2" role="img" aria-label="Output tokens per item, original versus rebuild" width="100%"></svg></div>
+  </div>
+  <div class="scroll" style="margin-top:16px"><table>
+    <thead><tr><th>Item</th><th class="n">Active min<br>orig / rebuild</th><th class="n">Output tok<br>orig / rebuild</th><th class="n">Cache read<br>orig / rebuild</th><th class="n">Cache write<br>orig / rebuild</th><th class="n">Tool calls<br>orig / rebuild</th><th class="n">Agent runs</th></tr></thead>
+    <tbody id="effort"></tbody>
+  </table></div>
+  <p style="margin-top:12px">Cache writes grew the most, about 7×. Every agent starts cold and re-reads the profile, the docs and the code, so the cost of context is paid five or six times per change instead of once. Cache reads grew less, 1.4×, because the original's single long session re-read its own growing history on every turn.</p>
+</section>
+
+<section>
+  <h2>Where the rebuild's agent time went</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Agent</th><th class="n">Runs</th><th class="n">Minutes</th><th class="n">Output tokens</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td>architect</td><td class="n">12</td><td class="n">32.9</td><td class="n">390k</td><td>Plans, plus every fix round (resumed)</td></tr>
+      <tr><td>junior-dev</td><td class="n">6</td><td class="n">20.3</td><td class="n">238k</td><td>Implements <code>tasks.md</code></td></tr>
+      <tr><td>qa</td><td class="n">5</td><td class="n">16.7</td><td class="n">155k</td><td><code>opsx:verify</code>, plus mutation runs on a scratch copy</td></tr>
+      <tr><td>spec-reviewer</td><td class="n">6</td><td class="n">9.0</td><td class="n">100k</td><td>Plan gate</td></tr>
+      <tr><td>senior-dev</td><td class="n">5</td><td class="n">6.3</td><td class="n">60k</td><td>Code review gate</td></tr>
+      <tr><td><b>All agents</b></td><td class="n">34</td><td class="n">85.2</td><td class="n">943k</td><td>Across setup, B-1–B-5 and the audit</td></tr>
+    </tbody>
+  </table></div>
+  <p style="margin-top:12px">Planning took the largest share. The architect used about 40% of agent time, partly because the use cases left implementation detail to it. The original's backlog prompts already named classes and libraries. QA took a fifth, mostly on breaking the code on purpose to prove the tests catch it. The orchestrator itself spent about 155 minutes in the session: sequencing, relaying and bookkeeping.</p>
+</section>
+
+<section>
+  <h2>Reviews and retrospectives</h2>
+  <div class="two">
+    <div>
+      <h3>Findings per change (rebuild)</h3>
+      <div class="scroll"><table>
+        <thead><tr><th>Change</th><th class="n">Std. viol.</th><th class="n">Other defects</th><th class="n">Failed reviews</th><th class="n">Lessons</th></tr></thead>
+        <tbody>
+          <tr><td>B-1 health + skeleton</td><td class="n">1</td><td class="n">3</td><td class="n">0</td><td class="n">3</td></tr>
+          <tr><td>B-2 ADD/SUB/MUL</td><td class="n">2</td><td class="n">7</td><td class="n">0</td><td class="n">6</td></tr>
+          <tr><td>B-3 DIVIDE</td><td class="n">0</td><td class="n">3</td><td class="n">0</td><td class="n">1</td></tr>
+          <tr><td>B-4 operand limits</td><td class="n">3</td><td class="n">9</td><td class="n">3</td><td class="n">7</td></tr>
+          <tr><td>B-5 API docs</td><td class="n">3</td><td class="n">5</td><td class="n">0</td><td class="n">6</td></tr>
+          <tr><td><b>Total</b></td><td class="n">9</td><td class="n">27</td><td class="n">3</td><td class="n">23</td></tr>
+        </tbody>
+      </table></div>
+      <p style="margin-top:10px">The original recorded no review findings for items 1–5, because it had no review step. Its later retrospectives (items 6–8) list catches made by ponytail review once that step existed.</p>
+    </div>
+    <div>
+      <h3>Catches that mattered</h3>
+      <ul>
+        <li><b>Framework errors with no <code>type</code></b> (B-2). Spring 7 leaves <code>ProblemDetail.type</code> empty, so a 405 or 415 had no <code>type</code> field. The defaults table the architect wrote, a lesson the ledger carried from B-1, made the junior dev check it and fix it.</li>
+        <li><b>A wrong boundary value in the plan</b> (B-4). <code>98765E+1000</code> was labelled out of range, but it sits exactly on BR-1's limit. The junior dev stopped instead of weakening the test.</li>
+        <li><b>A disproved risk claim</b> (B-4). The spec reviewer ran Jackson itself and showed the architect's example was wrong before you were asked to accept it.</li>
+        <li><b>Two tests that couldn't fail</b> (B-4). A <code>Math.abs</code> scale check and an echo of the value as <code>9.8765E+1005</code> both passed every test. QA found and closed both by breaking the code on purpose.</li>
+        <li><b>Docs that overclaimed</b> (B-5). The API description said every other HTTP error was <code>about:blank</code>. An unhandled 500 is not.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note" style="margin-top:14px">The ledger is not closing its loop yet. Lessons L-1, L-3, L-6 and L-11 each recurred, and four lines are at 2 records. But they "held" only because the orchestrator pasted them into each agent's prompt. None of their targets has been changed: STANDARDS, the profile, <code>openspec/config.yaml</code> and the plugin's agent files are all untouched.</div>
+</section>
+
+<section id="code">
+  <h2>Code</h2>
+  <div class="scroll"><table>
+    <thead><tr><th></th><th class="n">Original @ <code>aea85a0</code></th><th class="n">Rebuild @ <code>8a8e3b0</code></th></tr></thead>
+    <tbody>
+      <tr><td>Production Java (lines / files)</td><td class="n">470 / 18</td><td class="n">473 / 13</td></tr>
+      <tr><td>Test Java (lines / files)</td><td class="n">817 / 9</td><td class="n">1,390 / 8</td></tr>
+      <tr><td>Tests run (all green)</td><td class="n">108</td><td class="n">155</td></tr>
+      <tr><td>Dependencies (main / test)</td><td class="n">4 / 5</td><td class="n">4 / 2</td></tr>
+      <tr><td>Planning artifacts (lines, 5 changes)</td><td class="n">1,136</td><td class="n">1,708</td></tr>
+    </tbody>
+  </table></div>
+  <p style="margin-top:12px">Both builds reached the same shape on their own. Both have a <code>domain / application / adapter.in.web / config</code> split enforced by ArchUnit, an <code>Operation</code> enum with an exact <code>named()</code> lookup, BR-1 checked in the <code>Calculation</code> constructor, one <code>ResponseEntityExceptionHandler</code> advice, and <b>the same three Jackson read limits</b> (16,384 / 1,000 / 1,000). The original kept two test dependencies it never used (removed later in its 5b); the rebuild never added them.</p>
+
+  <h3>Behaviour, checked by running both jars</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Case</th><th>Original</th><th>Rebuild</th><th>Better</th></tr></thead>
+    <tbody>
+      <tr><td>415 / 405 framework error</td><td>Problem Details <b>with no <code>type</code></b>. PRD §3.2 requires one.</td><td><code>type: about:blank</code>, with tests</td><td><span class="pill r">Rebuild</span></td></tr>
+      <tr><td>Docs examples</td><td>Hand-written JSON constants (<code>ProblemExamples</code>). Its later audit flagged the hand-listed Operations.</td><td>Generated from the domain. Each example is compared with a live response.</td><td><span class="pill r">Rebuild</span></td></tr>
+      <tr><td>Tests proven to catch broken code</td><td>Not checked</td><td>QA ran 8–21 mutants per change. Every gap found was closed.</td><td><span class="pill r">Rebuild</span></td></tr>
+      <tr><td>Deeply nested 1.2 KB body</td><td>Generic <code>invalid-request</code> detail</td><td>Says "too large: at most 16,384 bytes", which is wrong (audit finding, now B-13)</td><td><span class="pill o">Original</span></td></tr>
+      <tr><td>Several required fields missing</td><td>Names every missing field, sorted</td><td>Names one; which one isn't fixed (waived)</td><td><span class="pill o">Original</span></td></tr>
+      <tr><td>Operand out of range</td><td>Says which limit was broken (digits or scale)</td><td>States both limits</td><td><span class="pill o">Original</span></td></tr>
+      <tr><td>Unknown operation</td><td>Echoes the given name, e.g. <code>'add'</code></td><td>Doesn't echo it</td><td><span class="pill e">Choice</span></td></tr>
+      <tr><td><code>/actuator/health</code></td><td><code>{"groups":[…],"status":"UP"}</code>, with exposure pinned to health</td><td><code>{"status":"UP"}</code> only. Follows readiness: <code>503 OUT_OF_SERVICE</code>, tested.</td><td><span class="pill e">Choice</span></td></tr>
+      <tr><td>BR-1 at <code>Integer.MIN_VALUE</code> scale</td><td><code>Math.abs((long) scale)</code></td><td>Two direct comparisons</td><td><span class="pill e">Both correct</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>What makes the comparison unfair</h2>
+  <ul>
+    <li><b>Better starting docs.</b> The rebuild started from the original's final PRD, domain model and standards. Several hard decisions were already written down: the failure order, the limits, the pinned versions and the exception names.</li>
+    <li><b>Lessons injected by hand.</b> I added each ledger lesson to the agents' prompts myself. A pipeline run without that would likely repeat more mistakes.</li>
+    <li><b>Different review regimes.</b> The original v1 had no reviews, so its defect count of zero means "not looked for", not "none". By items 6–8 it had added ponytail and <code>/code-review</code>, which closed some of the gap.</li>
+    <li><b>One long session.</b> The rebuild's five runs share one session, so the orchestrator's later turns carry more context and cost more. Its token figures for the later items are slightly inflated.</li>
+    <li><b>Wall-clock time includes humans.</b> The rebuild's 313 wall minutes against the original's 85 include about 70 minutes of waiting at gates. The active-time figures leave that out.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Takeaways</h2>
+  <ul>
+    <li><b>The pipeline buys verification, not a different design.</b> Both builds converged on the same structure. The gain is evidence: specs that match the code, tests proven by mutation, and a recorded reason for each deviation.</li>
+    <li><b>The cost goes on cold context and planning.</b> Cache writes rose 7× and the architect took 40% of agent time. Giving use cases more technical context, or merging the plan review into the plan step for small changes like B-3, would cut both.</li>
+    <li><b>The gates paid off on the hardest change.</b> B-4 had three failed reviews and 15 findings. The easy change, B-3, came through clean. That suggests a lighter route for small changes.</li>
+    <li><b>Both builds miss some error details.</b> Each has defects the other avoided. A shared catch-all 500 handler and fuller error details would make both stronger (ledger L-17, backlog B-13).</li>
+    <li><b>Adopt the recurring lessons.</b> Writing L-1, L-3, L-6 and L-11 into STANDARDS, the profile and <code>openspec/config.yaml</code> would make the pipeline improve itself without the orchestrator having to remember.</li>
+  </ul>
+</section>
+
+<footer>Sources: session logs <code>1bf91e3b…</code> (original) and <code>47ef3287…</code> (rebuild, including 75 subagent transcripts), split at each PR merge; <code>reports/sessions/*.summary.json</code>; <code>retrospectives/</code>; the test-result XML from both builds; and live probes of both jars on local ports. The original was measured at <code>aea85a0</code> (v1 complete) and the rebuild at <code>8a8e3b0</code> (MVP complete).</footer>
+</div>
+
+<script>
+const items=["Item 1","Item 2","Item 3","Item 4","Item 5"];
+const D={active:[[29.9,22.1],[11.9,24.6],[8.7,20.3],[11.0,33.6],[13.8,32.2]],
+ out:[[58714,69978],[38658,110924],[26423,81704],[46129,164174],[46676,135299]],
+ cr:[[7.53,8.45],[6.82,11.58],[8.96,12.96],[13.05,22.46],[15.84,19.03]],
+ cw:[[123,290],[57,394],[49,374],[69,683],[69,941]],
+ tools:[[92,101],[52,117],[51,116],[62,159],[70,134]],
+ runs:["1 / 6","1 / 6","1 / 6","1 / 11","1 / 6"]};
+const tb=document.getElementById("effort");const k=n=>Math.round(n/1000)+"k";
+items.forEach((it,i)=>{tb.insertAdjacentHTML("beforeend",`<tr><td>${it}${i==0?" <span style='color:var(--muted)'>(orig incl. setup)</span>":""}</td><td class="n">${D.active[i][0]} / ${D.active[i][1]}</td><td class="n">${k(D.out[i][0])} / ${k(D.out[i][1])}</td><td class="n">${D.cr[i][0]}M / ${D.cr[i][1]}M</td><td class="n">${D.cw[i][0]}k / ${D.cw[i][1]}k</td><td class="n">${D.tools[i][0]} / ${D.tools[i][1]}</td><td class="n">${D.runs[i]}</td></tr>`)});
+tb.insertAdjacentHTML("beforeend",`<tr><td><b>Total</b></td><td class="n"><b>75.3 / 132.8</b></td><td class="n"><b>217k / 562k</b></td><td class="n"><b>52.2M / 74.5M</b></td><td class="n"><b>368k / 2,682k</b></td><td class="n"><b>327 / 627</b></td><td class="n"><b>5 / 35</b></td></tr>`);
+
+function chart(id,data,fmt,max,ticks){
+  const svg=document.getElementById(id),W=420,rowH=34,top=8,left=56,right=40,H=top+items.length*rowH+24;
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);const x=v=>left+(W-left-right)*v/max;let s="";
+  ticks.forEach(t=>{s+=`<line x1="${x(t)}" x2="${x(t)}" y1="${top}" y2="${H-20}" stroke="var(--rule)" stroke-width="1"/><text x="${x(t)}" y="${H-6}" text-anchor="middle">${fmt(t)}</text>`});
+  items.forEach((it,i)=>{const y=top+i*rowH;s+=`<text x="0" y="${y+18}">${it}</text>`;
+    data[i].forEach((v,j)=>{const by=y+3+j*14,w=Math.max(2,x(v)-left);
+      s+=`<rect class="bar" x="${left}" y="${by}" width="${w}" height="12" rx="3" fill="${j?'var(--s2)':'var(--s1)'}"><title>${it}, ${j?'rebuild':'original'}: ${fmt(v)}</title></rect><text class="v" x="${left+w+4}" y="${by+10}">${fmt(v)}</text>`})});
+  svg.innerHTML=s;}
+chart("c1",D.active,v=>(+v).toFixed(v%1?1:0),40,[0,10,20,30,40]);
+chart("c2",D.out.map(r=>r.map(v=>v/1000)),v=>Math.round(v)+"",180,[0,60,120,180]);
+</script>
+
+</body></html>
